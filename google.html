@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resiliency Intelligence Platform v2 (Light)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg2: #f8fafc;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #64748b;
+  --accent: #0284c7;
+  --accent2: #0369a1;
+  --green: #059669;
+  --yellow: #d97706;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #7c3aed;
+  --font-main: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-cond: 'IBM Plex Sans Condensed', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-main); font-size:13px; overflow:hidden; height:100vh; display:flex; flex-direction:column; }
+body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(2,132,199,0.03) 2px,rgba(2,132,199,0.03) 4px); pointer-events:none; z-index:9999; }
+
+/* ─── HEADER ─── */
+.header { height:46px; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:0; flex-shrink:0; }
+.logo { display:flex; align-items:center; gap:9px; font-family:var(--font-cond); font-size:14px; font-weight:700; letter-spacing:0.08em; color:var(--text); padding-right:20px; border-right:1px solid var(--border); }
+.logo-icon { width:26px; height:26px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:13px; color:#ffffff; }
+.mode-tabs { display:flex; height:100%; }
+.mode-tab { padding:0 18px; height:100%; display:flex; align-items:center; gap:6px; font-size:11px; font-weight:500; letter-spacing:0.05em; cursor:pointer; border-bottom:2px solid transparent; color:var(--text3); transition:all 0.2s; text-transform:uppercase; border-right:1px solid var(--border); }
+.mode-tab:first-child { margin-left:14px; }
+.mode-tab:hover { color:var(--text); background:rgba(0,0,0,0.03); }
+.mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:rgba(2,132,199,0.05); }
+.mode-tab.incident { color:var(--red)!important; border-bottom-color:var(--red)!important; background:rgba(220,38,38,0.07)!important; }
+.tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+.inc-pulse { animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.status-pill { display:flex; align-items:center; gap:5px; padding:3px 10px; border-radius:3px; font-family:var(--font-mono); font-size:10px; font-weight:500; }
+.status-pill.ok { background:rgba(5,150,105,0.1); color:var(--green); border:1px solid rgba(5,150,105,0.3); }
+.avatar { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent2),var(--purple)); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:#ffffff; }
+.role-badge { font-family:var(--font-mono); font-size:9px; padding:2px 7px; border-radius:2px; border:1px solid var(--border2); color:var(--text3); letter-spacing:0.06em; }
+
+/* ─── WORKSPACE ─── */
+.workspace { display:flex; flex:1; overflow:hidden; }
+
+/* ─── LEFT RAIL ─── */
+.left-rail { width:190px; min-width:190px; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.rail-section { padding:10px 0; border-bottom:1px solid var(--border); }
+.rail-label { font-family:var(--font-mono); font-size:9px; font-weight:500; letter-spacing:0.12em; color:var(--text3); text-transform:uppercase; padding:0 13px 7px; }
+.nav-item { display:flex; align-items:center; gap:8px; padding:6px 13px; cursor:pointer; color:var(--text2); font-size:12px; transition:all 0.15s; border-left:2px solid transparent; }
+.nav-item:hover { background:rgba(0,0,0,0.04); color:var(--text); }
+.nav-item.active { background:rgba(2,132,199,0.07); color:var(--accent); border-left-color:var(--accent); }
+.nav-item .ico { font-size:12px; width:15px; text-align:center; }
+.nav-count { margin-left:auto; font-family:var(--font-mono); font-size:10px; padding:1px 5px; border-radius:2px; background:rgba(2,132,199,0.12); color:var(--accent); }
+.nav-count.warn { background:rgba(220,38,38,0.12); color:var(--red); }
+.nav-count.amber { background:rgba(217,119,6,0.12); color:var(--yellow); }
+
+.filter-area { padding:10px 13px; }
+.fl { font-family:var(--font-mono); font-size:9px; letter-spacing:0.1em; color:var(--text3); text-transform:uppercase; margin-bottom:7px; }
+.chip-row { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+.chip { padding:3px 7px; border-radius:2px; font-size:10px; cursor:pointer; border:1px solid var(--border2); color:var(--text2); transition:all 0.15s; }
+.chip.on { background:rgba(2,132,199,0.1); border-color:var(--accent); color:var(--accent); }
+.chip.t1 { border-color:rgba(220,38,38,0.4); color:var(--red); background:rgba(220,38,38,0.08); }
+.chip.t2 { border-color:rgba(217,119,6,0.35); color:var(--yellow); background:rgba(217,119,6,0.07); }
+.chip.t3 { border-color:rgba(5,150,105,0.35); color:var(--green); background:rgba(5,150,105,0.07); }
+
+.ai-ctx-box { margin-top:auto; padding:10px 13px; border-top:1px solid var(--border); background:rgba(2,132,199,0.03); }
+.ai-ctx-lbl { font-family:var(--font-mono); font-size:9px; letter-spacing:0.1em; color:var(--accent); text-transform:uppercase; margin-bottom:5px; }
+.ai-ctx-body { font-size:11px; color:var(--text2); line-height:1.5; }
+.ai-ctx-body strong { color:var(--text); }
+
+/* ─── MAIN ─── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ─── ROLE SWITCHER ─── */
+.role-switcher { display:flex; align-items:center; gap:0; padding:0 20px; background:var(--bg2); border-bottom:1px solid var(--border); height:38px; flex-shrink:0; }
+.role-switch-label { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-right:12px; }
+.role-btn { padding:4px 14px; font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--text2); font-family:var(--font-main); transition:all 0.2s; letter-spacing:0.03em; }
+.role-btn:first-of-type { border-radius:3px 0 0 3px; }
+.role-btn:last-of-type { border-radius:0 3px 3px 0; border-left:none; }
+.role-btn.active { background:rgba(2,132,199,0.12); border-color:var(--accent); color:var(--accent); }
+.role-btn.admin.active { background:rgba(124,58,237,0.12); border-color:var(--purple); color:var(--purple); }
+.view-mode-info { margin-left:auto; font-size:11px; color:var(--text3); display:flex; align-items:center; gap:6px; }
+.view-mode-info span { color:var(--text2); }
+
+/* ─── TAXONOMY SPLIT LAYOUT ─── */
+.taxonomy-layout { display:flex; flex:1; overflow:hidden; }
+
+/* Left: Function list */
+.fn-panel { width:340px; min-width:340px; display:flex; flex-direction:column; border-right:1px solid var(--border); overflow:hidden; }
+.fn-panel-hdr { padding:10px 14px; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.fn-panel-title { font-family:var(--font-cond); font-size:13px; font-weight:700; letter-spacing:0.05em; color:var(--text); }
+.fn-search { flex:1; background:rgba(0,0,0,0.04); border:1px solid var(--border2); border-radius:3px; padding:5px 10px; color:var(--text); font-family:var(--font-main); font-size:11px; outline:none; }
+.fn-search:focus { border-color:var(--accent); background:#ffffff; }
+.fn-search::placeholder { color:var(--text3); }
+
+.fn-list { flex:1; overflow-y:auto; padding:8px; }
+.fn-card { padding:10px 12px; border:1px solid var(--border); border-radius:3px; margin-bottom:6px; cursor:pointer; background:var(--bg2); transition:all 0.15s; position:relative; overflow:hidden; }
+.fn-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; }
+.fn-card.t1::before { background:var(--red); }
+.fn-card.t2::before { background:var(--yellow); }
+.fn-card.t3::before { background:var(--green); }
+.fn-card:hover { border-color:var(--border2); background:var(--bg3); }
+.fn-card.selected { border-color:var(--accent); background:rgba(2,132,199,0.05); }
+.fn-card.has-change { border-color:rgba(124,58,237,0.4); }
+.fn-card-top { display:flex; align-items:flex-start; gap:7px; margin-bottom:5px; }
+.fn-card-name { font-size:12px; font-weight:600; color:var(--text); flex:1; line-height:1.3; }
+.tier-pill { font-family:var(--font-mono); font-size:9px; padding:2px 6px; border-radius:2px; flex-shrink:0; }
+.tier-pill.t1 { background:rgba(220,38,38,0.15); color:var(--red); border:1px solid rgba(220,38,38,0.3); }
+.tier-pill.t2 { background:rgba(217,119,6,0.1); color:var(--yellow); border:1px solid rgba(217,119,6,0.25); }
+.tier-pill.t3 { background:rgba(5,150,105,0.1); color:var(--green); border:1px solid rgba(5,150,105,0.2); }
+.fn-card-meta { display:flex; gap:10px; font-size:10px; color:var(--text2); }
+.fn-card-meta .m { display:flex; align-items:center; gap:3px; }
+.fn-card-meta .ml { font-family:var(--font-mono); font-size:9px; color:var(--text3); text-transform:uppercase; }
+.fn-card-meta .mv { font-family:var(--font-mono); font-size:10px; }
+.fn-card-meta .mv.r { color:var(--red); }
+.fn-card-meta .mv.y { color:var(--yellow); }
+.change-indicator { display:inline-flex; align-items:center; gap:4px; margin-top:5px; padding:2px 7px; border-radius:2px; font-size:10px; }
+.change-indicator.pending { background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.3); color:var(--purple); }
+.change-indicator.approved { background:rgba(5,150,105,0.1); border:1px solid rgba(5,150,105,0.25); color:var(--green); }
+
+/* Right: AI Agent Panel */
+.ai-agent-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+/* Agent header */
+.agent-hdr { padding:10px 16px; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.agent-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,rgba(2,132,199,0.2),rgba(3,105,161,0.2)); border:1px solid rgba(2,132,199,0.35); display:flex; align-items:center; justify-content:center; font-size:15px; position:relative; flex-shrink:0; }
+.agent-avatar::after { content:''; position:absolute; inset:-3px; border-radius:50%; border:1px solid rgba(2,132,199,0.15); animation:ring 2.5s infinite; }
+@keyframes ring { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:0;transform:scale(1.2)} }
+.agent-hdr-info { flex:1; }
+.agent-name { font-size:12px; font-weight:600; color:var(--text); }
+.agent-desc { font-size:10px; color:var(--text3); margin-top:1px; }
+.agent-status { display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10px; color:var(--green); }
+.agent-status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:glow 2s infinite; }
+@keyframes glow { 0%,100%{box-shadow:0 0 4px rgba(5,150,105,0.5)} 50%{box-shadow:0 0 10px rgba(5,150,105,0.8)} }
+
+/* Conversation area */
+.convo { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+
+/* Messages */
+.msg { display:flex; gap:10px; }
+.msg.user { flex-direction:row-reverse; }
+.msg-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; flex-shrink:0; }
+.msg-av.ai { background:linear-gradient(135deg,rgba(2,132,199,0.25),rgba(3,105,161,0.25)); color:var(--accent); border:1px solid rgba(2,132,199,0.3); font-size:13px; }
+.msg-av.user { background:linear-gradient(135deg,var(--accent2),var(--purple)); color:#ffffff; }
+.msg-av.admin { background:linear-gradient(135deg,rgba(124,58,237,0.4),rgba(100,60,200,0.4)); color:var(--purple); border:1px solid rgba(124,58,237,0.4); }
+.bubble { padding:10px 13px; border-radius:6px; font-size:12px; line-height:1.6; max-width:420px; }
+.msg.ai .bubble { background:var(--bg3); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:2px; }
+.msg.user .bubble { background:rgba(2,132,199,0.1); border:1px solid rgba(2,132,199,0.2); color:var(--text); border-bottom-right-radius:2px; }
+.msg.admin .bubble { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.2); color:var(--text); border-bottom-right-radius:2px; }
+
+/* Diff card inside bubble */
+.diff-card { margin-top:10px; border-radius:3px; overflow:hidden; border:1px solid var(--border); background:#ffffff; }
+.diff-card-hdr { padding:6px 10px; background:rgba(2,132,199,0.07); border-bottom:1px solid var(--border); font-family:var(--font-mono); font-size:10px; color:var(--accent); display:flex; align-items:center; justify-content:space-between; }
+.diff-row { display:flex; align-items:flex-start; padding:6px 10px; border-bottom:1px solid var(--border); font-size:11px; gap:10px; }
+.diff-row:last-child { border:none; }
+.diff-field { width:110px; font-family:var(--font-mono); font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; flex-shrink:0; padding-top:1px; }
+.diff-old { flex:1; color:rgba(220,38,38,0.8); text-decoration:line-through; font-size:11px; }
+.diff-arrow { color:var(--text3); font-size:10px; flex-shrink:0; }
+.diff-new { flex:1; color:var(--green); font-size:11px; font-weight:500; }
+.diff-unchanged { flex:1; color:var(--text2); font-size:11px; font-style:italic; }
+
+/* Validation card */
+.val-card { margin-top:10px; border-radius:3px; overflow:hidden; border:1px solid var(--border); background:#ffffff; }
+.val-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); font-size:11px; }
+.val-row:last-child { border:none; }
+.val-icon { font-size:12px; flex-shrink:0; }
+.val-text { flex:1; color:var(--text2); }
+.val-text strong { color:var(--text); }
+.val-status { font-family:var(--font-mono); font-size:10px; flex-shrink:0; }
+.val-status.ok { color:var(--green); }
+.val-status.warn { color:var(--yellow); }
+.val-status.fail { color:var(--red); }
+
+/* Summary card */
+.summary-card { margin-top:10px; background:var(--bg4); border:1px solid var(--border); border-radius:3px; padding:12px; }
+.summary-card-title { font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:8px; }
+.summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+.summary-stat { text-align:center; padding:8px; background:#ffffff; border:1px solid var(--border); border-radius:3px; }
+.summary-num { font-family:var(--font-mono); font-size:18px; font-weight:600; color:var(--text); }
+.summary-lbl { font-size:9px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
+.summary-detail { font-size:11px; color:var(--text2); line-height:1.7; }
+.summary-detail .tag { display:inline-block; padding:1px 6px; border-radius:2px; font-size:10px; margin:1px; }
+.summary-detail .tag.r { background:rgba(220,38,38,0.12); color:var(--red); border:1px solid rgba(220,38,38,0.3); }
+.summary-detail .tag.y { background:rgba(217,119,6,0.1); color:var(--yellow); border:1px solid rgba(217,119,6,0.25); }
+.summary-detail .tag.g { background:rgba(5,150,105,0.1); color:var(--green); border:1px solid rgba(5,150,105,0.25); }
+.summary-detail .tag.p { background:rgba(124,58,237,0.1); color:var(--purple); border:1px solid rgba(124,58,237,0.3); }
+
+/* Risk flag card */
+.risk-card { margin-top:8px; padding:8px 10px; border-radius:3px; display:flex; gap:8px; align-items:flex-start; background:#ffffff; }
+.risk-card.high { background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.3); }
+.risk-card.med { background:rgba(217,119,6,0.07); border:1px solid rgba(217,119,6,0.25); }
+.risk-card .ri { flex-shrink:0; font-size:13px; }
+.risk-card .rt { font-size:11px; line-height:1.5; color:var(--text2); }
+.risk-card .rt strong { display:block; margin-bottom:2px; }
+.risk-card.high .rt strong { color:var(--red); }
+.risk-card.med .rt strong { color:var(--yellow); }
+
+/* Action buttons */
+.msg-btns { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.msg-btn { padding:4px 10px; border-radius:2px; font-size:10px; cursor:pointer; background:rgba(2,132,199,0.07); border:1px solid rgba(2,132,199,0.22); color:var(--accent); font-family:var(--font-main); transition:all 0.15s; }
+.msg-btn:hover { background:rgba(2,132,199,0.16); }
+.msg-btn.approve { background:rgba(5,150,105,0.1); border-color:rgba(5,150,105,0.3); color:var(--green); }
+.msg-btn.approve:hover { background:rgba(5,150,105,0.2); }
+.msg-btn.reject { background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); color:var(--red); }
+.msg-btn.reject:hover { background:rgba(220,38,38,0.2); }
+.msg-btn.flag { background:rgba(217,119,6,0.08); border-color:rgba(217,119,6,0.25); color:var(--yellow); }
+
+/* Section separator */
+.convo-divider { display:flex; align-items:center; gap:10px; margin:4px 0; }
+.convo-divider-line { flex:1; height:1px; background:var(--border); }
+.convo-divider-text { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); white-space:nowrap; }
+
+/* Submission receipt */
+.receipt { margin-top:10px; background:rgba(5,150,105,0.05); border:1px solid rgba(5,150,105,0.2); border-radius:3px; padding:12px; }
+.receipt-title { font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.receipt-id { font-family:var(--font-mono); font-size:11px; color:var(--text); font-weight:600; margin-bottom:6px; }
+.receipt-rows { font-size:11px; color:var(--text2); line-height:1.8; }
+.receipt-rows span { color:var(--text); font-weight:500; }
+
+/* Input area */
+.input-area { border-top:1px solid var(--border); padding:12px 14px; background:var(--bg2); flex-shrink:0; }
+.input-row { display:flex; gap:8px; align-items:center; }
+.input-box { flex:1; background:#ffffff; border:1px solid var(--border2); border-radius:4px; padding:8px 12px; color:var(--text); font-family:var(--font-main); font-size:12px; outline:none; transition:all 0.15s; }
+.input-box:focus { border-color:var(--accent); background:rgba(2,132,199,0.04); }
+.input-box::placeholder { color:var(--text3); }
+.send-btn { width:32px; height:32px; border-radius:4px; background:var(--accent); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; color:#ffffff; font-weight:700; transition:all 0.15s; }
+.send-btn:hover { background:#0369a1; }
+.quick-prompts { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+.qp { padding:3px 9px; border-radius:2px; font-size:10px; cursor:pointer; background:rgba(2,132,199,0.05); border:1px solid rgba(2,132,199,0.18); color:var(--text2); transition:all 0.15s; white-space:nowrap; }
+.qp:hover { background:rgba(2,132,199,0.12); color:var(--text); }
+.qp.admin { background:rgba(124,58,237,0.05); border-color:rgba(124,58,237,0.2); }
+.qp.admin:hover { background:rgba(124,58,237,0.12); }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* ─── OTHER VIEWS (stub) ─── */
+.stub-view { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+.stub-icon { font-size:40px; opacity:0.3; }
+.stub-text { font-size:13px; color:var(--text3); }
+
+/* ─── PLANNING MODE ─── */
+.plan-layout { display:flex; flex:1; overflow:hidden; }
+.plan-chat { width:370px; min-width:370px; display:flex; flex-direction:column; border-right:1px solid var(--border); background:var(--bg2); overflow:hidden; }
+.plan-canvas { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.canvas-tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg2); flex-shrink:0; }
+.ctab { padding:9px 15px; font-size:11px; cursor:pointer; color:var(--text3); border-bottom:2px solid transparent; transition:all 0.15s; }
+.ctab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.canvas-body { flex:1; overflow-y:auto; padding:14px; background:var(--bg); }
+.dep-box { background:var(--bg2); border:1px solid var(--border); border-radius:4px; height:210px; position:relative; overflow:hidden; margin-bottom:12px; display:flex; align-items:center; justify-content:center; }
+.dep-bg { position:absolute; inset:0; background:radial-gradient(ellipse at 30% 50%,rgba(2,132,199,0.04),transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(124,58,237,0.04),transparent 60%); }
+.dep-svg { position:absolute; inset:0; width:100%; height:100%; }
+.dep-nd { position:absolute; display:flex; flex-direction:column; align-items:center; z-index:2; }
+.nd-box { padding:4px 9px; border-radius:3px; font-size:10px; font-weight:500; white-space:nowrap; border:1px solid; background:#ffffff;}
+.nd-box.fn { background:rgba(220,38,38,0.05); border-color:rgba(220,38,38,0.4); color:var(--red); }
+.nd-box.fn.hit { background:rgba(220,38,38,0.15); border-color:var(--red); box-shadow:0 0 14px rgba(220,38,38,0.25); animation:npulse 2s infinite; }
+.nd-box.app { background:rgba(124,58,237,0.05); border-color:rgba(124,58,237,0.4); color:var(--purple); }
+.nd-box.app.down { background:rgba(220,38,38,0.1); border-color:var(--red); color:var(--red); }
+.nd-box.le { background:rgba(2,132,199,0.05); border-color:rgba(2,132,199,0.4); color:var(--accent); }
+.nd-box.fb { background:rgba(5,150,105,0.05); border-color:rgba(5,150,105,0.35); color:var(--green); }
+@keyframes npulse { 0%,100%{box-shadow:0 0 8px rgba(220,38,38,0.15)} 50%{box-shadow:0 0 22px rgba(220,38,38,0.35)} }
+.nd-lbl { font-size:9px; color:var(--text3); margin-top:3px; }
+.nd-lbl.r { color:var(--red); }
+.nd-lbl.g { color:var(--green); }
+
+.igrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.icard { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:11px; }
+.icard-title { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:9px; }
+.irow { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid var(--border); font-size:11px; }
+.irow:last-child { border:none; }
+.idot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.iname { flex:1; color:var(--text); }
+.irto { font-family:var(--font-mono); font-size:10px; }
+.pbar-w { width:56px; height:4px; background:var(--border); border-radius:2px; }
+.pbar { height:100%; border-radius:2px; }
+.le-r { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--border); font-size:11px; color:var(--text); }
+.le-r:last-child { border:none; }
+.le-c { font-family:var(--font-mono); font-size:10px; color:var(--red); }
+.warn-box { margin-top:8px; padding:6px 8px; background:rgba(220,38,38,0.07); border:1px solid rgba(220,38,38,0.2); border-radius:3px; font-size:10px; color:var(--red); }
+
+/* ─── INCIDENT MODE ─── */
+.inc-banner { background:rgba(220,38,38,0.1); border-bottom:1px solid rgba(220,38,38,0.4); padding:8px 18px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.inc-pill { background:var(--red); color:#ffffff; font-weight:700; font-family:var(--font-mono); font-size:11px; padding:3px 8px; border-radius:2px; flex-shrink:0; }
+.inc-t { font-weight:600; color:var(--text); font-size:13px; }
+.inc-m { font-size:11px; color:var(--red); }
+.inc-timer { margin-left:auto; font-family:var(--font-mono); font-size:12px; color:var(--red); display:flex; align-items:center; gap:5px; }
+.inc-acts { display:flex; gap:7px; margin-left:14px; }
+.btn { padding:5px 12px; border-radius:3px; font-size:11px; font-weight:500; cursor:pointer; border:none; font-family:var(--font-main); transition:all 0.15s; }
+.btn-ghost { background:#ffffff; border:1px solid var(--border2); color:var(--text2); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+.btn-red { background:var(--red); color:#ffffff; font-weight:600; }
+.btn-red:hover { background:#b91c1c; }
+
+.inc-layout { display:grid; grid-template-columns:210px 1fr 250px; flex:1; overflow:hidden; }
+.inc-l { background:var(--bg2); border-right:1px solid var(--border); overflow-y:auto; padding:12px; }
+.inc-c { display:flex; flex-direction:column; overflow:hidden; }
+.inc-r { background:var(--bg2); border-left:1px solid var(--border); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+
+.isec { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin:10px 0 6px; }
+.isec:first-child { margin-top:0; }
+.srow { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:11px; color:var(--text); }
+.srow:last-child { border:none; }
+.sdot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.tl { display:flex; flex-direction:column; gap:0; }
+.tli { display:flex; gap:8px; padding-bottom:10px; position:relative; }
+.tli::before { content:''; position:absolute; left:8px; top:16px; bottom:0; width:1px; background:var(--border); }
+.tli:last-child::before { display:none; }
+.tld { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8px; flex-shrink:0; background:#ffffff; }
+.tld.r { border:1px solid var(--red); color:var(--red); }
+.tld.b { border:1px solid var(--accent); color:var(--accent); }
+.tld.y { border:1px solid var(--yellow); color:var(--yellow); }
+.tltime { font-family:var(--font-mono); font-size:9px; color:var(--text3); }
+.tltext { font-size:10px; color:var(--text2); line-height:1.4; }
+
+.inc-agent-hdr { padding:7px 12px; background:rgba(220,38,38,0.06); border-bottom:1px solid rgba(220,38,38,0.2); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.directive { background:var(--bg3); border:1px solid rgba(220,38,38,0.2); border-radius:4px; padding:12px; }
+.dir-hdr { display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+.dir-title { font-size:12px; font-weight:600; color:var(--text); }
+.dir-sub { font-size:10px; color:var(--text3); }
+.dir-steps { display:flex; flex-direction:column; gap:6px; }
+.dstep { display:flex; gap:9px; align-items:flex-start; padding:7px 9px; background:#ffffff; border:1px solid var(--border); border-radius:3px; cursor:pointer; transition:all 0.15s; }
+.dstep:hover { background:rgba(2,132,199,0.05); border-color:rgba(2,132,199,0.2); }
+.dsn { width:18px; height:18px; border-radius:50%; background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.3); color:var(--red); font-family:var(--font-mono); font-size:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.dst { font-size:11px; color:var(--text2); line-height:1.5; flex:1; }
+.dst strong { color:var(--text); }
+
+.risk-a { padding:9px 11px; border-radius:3px; display:flex; gap:7px; align-items:flex-start; margin-bottom:8px; background:#ffffff; }
+.risk-a.h { background:rgba(220,38,38,0.05); border:1px solid rgba(220,38,38,0.3); }
+.risk-a.m { background:rgba(217,119,6,0.05); border:1px solid rgba(217,119,6,0.25); }
+.risk-a .ri { flex-shrink:0; font-size:13px; }
+.risk-a .rt { font-size:11px; line-height:1.5; color:var(--text2); }
+.risk-a .rt strong { display:block; margin-bottom:1px; }
+.risk-a.h .rt strong { color:var(--red); }
+.risk-a.m .rt strong { color:var(--yellow); }
+
+.rto-c { background:var(--bg3); border:1px solid var(--border); border-radius:4px; padding:11px; }
+.rto-ct { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:9px; }
+.rto-i { margin-bottom:9px; }
+.rto-i:last-child { margin-bottom:0; }
+.rto-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+.rto-fn { font-size:11px; font-weight:500; color:var(--text); }
+.rto-rem { font-family:var(--font-mono); font-size:11px; }
+.rto-rem.d { color:var(--red); }
+.rto-rem.w { color:var(--yellow); }
+.rto-rem.o { color:var(--green); }
+.rto-bar-w { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.rto-bar-f { height:100%; border-radius:2px; }
+
+.ncard { background:var(--bg3); border:1px solid var(--border); border-radius:4px; padding:11px; }
+.ncard-t { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:9px; }
+.nbtn { display:flex; align-items:center; gap:7px; padding:6px 9px; border-radius:3px; font-size:11px; cursor:pointer; margin-bottom:5px; background:#ffffff; border:1px solid var(--border); color:var(--text2); transition:all 0.15s; }
+.nbtn:last-child { margin-bottom:0; }
+.nbtn:hover { background:rgba(2,132,199,0.05); border-color:rgba(2,132,199,0.25); color:var(--text); }
+.nbtn-sub { font-size:9px; color:var(--text3); margin-top:1px; }
+
+/* View switching */
+.view { display:none; flex:1; flex-direction:column; overflow:hidden; }
+.view.active { display:flex; }
+
+.inc-wrapper { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🛡</div> RIP
+  </div>
+  <div class="mode-tabs">
+    <div class="mode-tab active" onclick="switchMode('taxonomy')"><span class="tab-dot"></span> Taxonomy</div>
+    <div class="mode-tab" onclick="switchMode('planning')"><span class="tab-dot"></span> Planning</div>
+    <div class="mode-tab incident" onclick="switchMode('incident')"><span class="tab-dot inc-pulse"></span> Incident Active</div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill ok"><span>●</span> NORMAL OPS</div>
+    <div id="clock" style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">09:52 UTC</div>
+    <div class="role-badge" id="role-badge">RESILIENCY ANALYST</div>
+    <div class="avatar" id="user-avatar">SC</div>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <div class="left-rail">
+    <div class="rail-section">
+      <div class="rail-label">Navigate</div>
+      <div class="nav-item active"><span class="ico">⚡</span> Functions <span class="nav-count">247</span></div>
+      <div class="nav-item"><span class="ico">📱</span> Applications <span class="nav-count">68</span></div>
+      <div class="nav-item"><span class="ico">🤝</span> Engagements <span class="nav-count">34</span></div>
+      <div class="nav-item"><span class="ico">⚖️</span> Legal Entities <span class="nav-count">22</span></div>
+      <div class="nav-item"><span class="ico">📄</span> Contracts <span class="nav-count warn">3</span></div>
+      <div class="nav-item"><span class="ico">🏦</span> Agent Banks <span class="nav-count">11</span></div>
+    </div>
+    <div class="rail-section">
+      <div class="rail-label">Filters</div>
+      <div class="filter-area">
+        <div class="fl">Criticality</div>
+        <div class="chip-row">
+          <div class="chip t1">TIER 1</div>
+          <div class="chip t2">TIER 2</div>
+          <div class="chip t3">TIER 3</div>
+        </div>
+        <div class="fl" style="margin-top:6px">Status</div>
+        <div class="chip-row">
+          <div class="chip on">Active</div>
+          <div class="chip">Pending</div>
+          <div class="chip">Review</div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-ctx-box">
+      <div class="ai-ctx-lbl">🤖 AI Context</div>
+      <div class="ai-ctx-body">
+        <strong>Payments Platform</strong><br>
+        <strong>23</strong> functions · <strong>4</strong> LEs<br>
+        <strong>2</strong> changes pending review
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="view active" id="view-taxonomy">
+
+      <div class="role-switcher">
+        <span class="role-switch-label">View as:</span>
+        <button class="role-btn active" id="btn-resiliency" onclick="switchRole('resiliency')">Resiliency Analyst</button>
+        <button class="role-btn admin" id="btn-admin" onclick="switchRole('admin')">Admin Reviewer</button>
+        <div class="view-mode-info">
+          <span id="role-context-text">Submit and manage taxonomy changes via the AI agent →</span>
+        </div>
+      </div>
+
+      <div class="taxonomy-layout">
+
+        <div class="fn-panel">
+          <div class="fn-panel-hdr">
+            <span class="fn-panel-title">Payments Platform</span>
+            <input class="fn-search" placeholder="🔍 Search functions...">
+          </div>
+          <div class="fn-list">
+
+            <div class="fn-card t1 selected" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">Wire Transfer Processing</div>
+                <span class="tier-pill t1">T1</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv r">4h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">3</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">4</span></div>
+              </div>
+            </div>
+
+            <div class="fn-card t1 has-change" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">SWIFT Messaging & Routing</div>
+                <span class="tier-pill t1">T1</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv r">4h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">2</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">3</span></div>
+              </div>
+              <div><span class="change-indicator pending">⏳ Change pending review</span></div>
+            </div>
+
+            <div class="fn-card t1" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">FX Settlement</div>
+                <span class="tier-pill t1">T1</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv y">8h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">2</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">3</span></div>
+              </div>
+            </div>
+
+            <div class="fn-card t2" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">Intraday Liquidity Mgmt</div>
+                <span class="tier-pill t2">T2</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv">12h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">1</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">2</span></div>
+              </div>
+              <div><span class="change-indicator approved">✓ Change approved today</span></div>
+            </div>
+
+            <div class="fn-card t2" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">Trade Confirmation & Matching</div>
+                <span class="tier-pill t2">T2</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv">8h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">2</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">2</span></div>
+              </div>
+            </div>
+
+            <div class="fn-card t2" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">Payment Netting & Reconciliation</div>
+                <span class="tier-pill t2">T2</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv">24h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">2</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">4</span></div>
+              </div>
+            </div>
+
+            <div class="fn-card t3" onclick="selectFn(this)">
+              <div class="fn-card-top">
+                <div class="fn-card-name">Correspondent Banking Reporting</div>
+                <span class="tier-pill t3">T3</span>
+              </div>
+              <div class="fn-card-meta">
+                <div class="m"><span class="ml">RTO</span>&nbsp;<span class="mv">72h</span></div>
+                <div class="m"><span class="ml">Apps</span>&nbsp;<span class="mv">1</span></div>
+                <div class="m"><span class="ml">LEs</span>&nbsp;<span class="mv">2</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="ai-agent-panel">
+          <div class="agent-hdr">
+            <div class="agent-avatar">🤖</div>
+            <div class="agent-hdr-info">
+              <div class="agent-name">Taxonomy AI Agent</div>
+              <div class="agent-desc" id="agent-desc">Helping resiliency analysts submit, validate and preview taxonomy changes</div>
+            </div>
+            <div class="agent-status">
+              <div class="agent-status-dot"></div>
+              <span>Ready</span>
+            </div>
+          </div>
+
+          <div class="convo" id="convo-resiliency">
+
+            <div class="convo-divider">
+              <div class="convo-divider-line"></div>
+              <div class="convo-divider-text">Session started · 09:44 UTC</div>
+              <div class="convo-divider-line"></div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Hello Sarah. I'm your Taxonomy Change Agent. You're currently viewing <strong>Payments Platform</strong> — 23 functions, 2 pending changes.<br><br>
+                You can submit changes by describing them in plain language, paste a list of function updates, or ask me to look up specific functions. What would you like to change today?
+                <div class="msg-btns">
+                  <div class="msg-btn" onclick="loadDemo('submit')">Submit changes for multiple functions</div>
+                  <div class="msg-btn" onclick="loadDemo('lookup')">Look up a function</div>
+                  <div class="msg-btn" onclick="loadDemo('bulk')">Review my pending submissions</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg user">
+              <div class="msg-av user">SC</div>
+              <div class="bubble">
+                I need to update 3 functions for the Payments platform. Wire Transfer: change RTO from 4 to 2 hours and add HKMA to regulatory views. SWIFT Messaging: update description to reflect new routing protocol, criticality stays TIER1. FX Settlement: re-parent it under Treasury Operations instead of Payments.
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Got it. I've fetched the current state of all 3 functions. Here's a full diff preview before I log anything — please confirm this is correct:
+
+                <div class="diff-card">
+                  <div class="diff-card-hdr">
+                    <span>Wire Transfer Processing</span>
+                    <span style="color:var(--red);font-size:10px">2 changes detected</span>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">RTO</div>
+                    <div class="diff-old">4 hours</div>
+                    <div class="diff-arrow">→</div>
+                    <div class="diff-new">2 hours ⬆ Tightened</div>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">Reg. Views</div>
+                    <div class="diff-old">FRB · PRA · MAS</div>
+                    <div class="diff-arrow">→</div>
+                    <div class="diff-new">FRB · PRA · MAS · HKMA</div>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">Criticality</div>
+                    <div class="diff-unchanged">TIER1 — no change</div>
+                  </div>
+                </div>
+
+                <div class="diff-card" style="margin-top:8px">
+                  <div class="diff-card-hdr">
+                    <span>SWIFT Messaging & Routing</span>
+                    <span style="color:var(--yellow);font-size:10px">1 change detected</span>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">Description</div>
+                    <div class="diff-old">Handles SWIFT MT message routing and translation between internal and external systems.</div>
+                    <div class="diff-arrow">→</div>
+                    <div class="diff-new">Handles SWIFT MT/MX message routing using ISO 20022 protocol for internal and external system interoperability.</div>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">Criticality</div>
+                    <div class="diff-unchanged">TIER1 — no change</div>
+                  </div>
+                </div>
+
+                <div class="diff-card" style="margin-top:8px">
+                  <div class="diff-card-hdr">
+                    <span>FX Settlement</span>
+                    <span style="color:var(--red);font-size:10px">1 change detected</span>
+                  </div>
+                  <div class="diff-row">
+                    <div class="diff-field">Parent</div>
+                    <div class="diff-old">Payments Operations</div>
+                    <div class="diff-arrow">→</div>
+                    <div class="diff-new">Treasury Operations</div>
+                  </div>
+                </div>
+
+                <div class="val-card" style="margin-top:10px">
+                  <div class="diff-card-hdr" style="background:rgba(217,119,6,0.06);border-bottom:1px solid var(--border)">
+                    <span style="color:var(--yellow)">Validation Results</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">RTO tightened to 2h — valid (positive direction, no approval block)</span>
+                    <span class="val-status ok">PASS</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">HKMA regulatory view added — valid</span>
+                    <span class="val-status ok">PASS</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">⚠️</span>
+                    <span class="val-text"><strong>FX Settlement re-parenting:</strong> TIER1 function moved across top-level taxonomy branch — requires justification note for admin review</span>
+                    <span class="val-status warn">FLAG</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">Description update on SWIFT Messaging — no structural rule violations</span>
+                    <span class="val-status ok">PASS</span>
+                  </div>
+                </div>
+
+                <div style="margin-top:10px;font-size:11px;color:var(--text2)">Please add a justification note for the FX Settlement re-parenting, then I'll log the submission.</div>
+
+                <div class="msg-btns">
+                  <div class="msg-btn" onclick="loadDemo('justify')">Add justification note</div>
+                  <div class="msg-btn reject" onclick="loadDemo('cancel')">Cancel this change</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg user">
+              <div class="msg-av user">SC</div>
+              <div class="bubble">
+                Justification: FX Settlement is operationally aligned with Treasury's cash management function since the TMS migration in Jan 2026. Re-parenting ensures correct regulatory and recovery ownership.
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Justification noted. Submission logged successfully.
+
+                <div class="receipt">
+                  <div class="receipt-title">✅ Submission Logged</div>
+                  <div class="receipt-id">SUB-2026-0047 · 21 Feb 2026 · 09:51 UTC</div>
+                  <div class="receipt-rows">
+                    Functions submitted: <span>3</span><br>
+                    RTO changes: <span>1</span> (Wire Transfer: 4h → 2h)<br>
+                    Description changes: <span>1</span> (SWIFT Messaging)<br>
+                    Regulatory view additions: <span>1</span> (HKMA added)<br>
+                    Hierarchy/parent changes: <span>1</span> (FX Settlement)<br>
+                    Risk flags for admin: <span>1</span> (TIER1 re-parenting)
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;font-size:11px;color:var(--text2)">Admin reviewers have been notified. You'll receive a notification when the submission is approved or if further information is required.</div>
+
+                <div class="msg-btns">
+                  <div class="msg-btn">Submit more changes</div>
+                  <div class="msg-btn">View submission status</div>
+                </div>
+              </div>
+            </div>
+
+          </div><div class="convo" id="convo-admin" style="display:none">
+
+            <div class="convo-divider">
+              <div class="convo-divider-line"></div>
+              <div class="convo-divider-text">Admin session · 09:52 UTC</div>
+              <div class="convo-divider-line"></div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Welcome back, David. There are <strong>3 submissions</strong> pending your review across 2 platforms.<br><br>
+                <strong>Payments Platform</strong> — SUB-2026-0047 (submitted 09:51 UTC, 3 functions, 1 risk flag)<br>
+                <strong>Payments Platform</strong> — SUB-2026-0041 (submitted yesterday, 7 functions, 2 risk flags)<br>
+                <strong>Trade Finance</strong> — SUB-2026-0039 (submitted 2 days ago, 5 functions, 0 flags)<br><br>
+                How would you like to proceed?
+                <div class="msg-btns">
+                  <div class="msg-btn admin" onclick="">Summarise all pending submissions</div>
+                  <div class="msg-btn admin" onclick="">Review SUB-2026-0047</div>
+                  <div class="msg-btn admin" onclick="">Show high-risk flags only</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg admin">
+              <div class="msg-av admin">DK</div>
+              <div class="bubble">Summarise submission SUB-2026-0047 grouped by change type.</div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Here is the full summary for <strong>SUB-2026-0047</strong> — Payments Platform:
+
+                <div class="summary-card">
+                  <div class="summary-card-title">Submission Overview</div>
+                  <div class="summary-grid">
+                    <div class="summary-stat"><div class="summary-num">3</div><div class="summary-lbl">Functions</div></div>
+                    <div class="summary-stat"><div class="summary-num" style="color:var(--yellow)">1</div><div class="summary-lbl">Risk Flag</div></div>
+                    <div class="summary-stat"><div class="summary-num" style="color:var(--purple)">4</div><div class="summary-lbl">Changes</div></div>
+                  </div>
+                  <div class="summary-detail">
+                    <strong style="color:var(--text);font-size:11px;display:block;margin-bottom:5px">Change type breakdown:</strong>
+                    <span class="tag r">1× RTO Tightened</span>
+                    <span class="tag p">1× Description Update</span>
+                    <span class="tag g">1× Regulatory View Added</span>
+                    <span class="tag y">1× Hierarchy Re-parent</span>
+                  </div>
+                  <div style="margin-top:10px;font-size:11px;color:var(--text2);line-height:1.7">
+                    <strong style="color:var(--text)">Wire Transfer</strong> — RTO tightened 4h → 2h · HKMA added to reg views<br>
+                    <strong style="color:var(--text)">SWIFT Messaging</strong> — Description updated (ISO 20022 reference)<br>
+                    <strong style="color:var(--text)">FX Settlement</strong> — Parent changed: Payments → Treasury Operations
+                  </div>
+                </div>
+
+                <div class="risk-card high">
+                  <span class="ri">🔴</span>
+                  <div class="rt">
+                    <strong>HIGH — TIER1 Re-parenting (FX Settlement)</strong>
+                    Moving a TIER1 function across top-level taxonomy branches affects regulatory ownership mapping. Justification provided: TMS migration Jan 2026, operational alignment with Treasury cash management. Review and validate before approving.
+                  </div>
+                </div>
+
+                <div class="risk-card med">
+                  <span class="ri">🟡</span>
+                  <div class="rt">
+                    <strong>NOTE — RTO Tightened by 50% (Wire Transfer)</strong>
+                    4h → 2h is an aggressive tightening. Verify with Ops that recovery capability actually supports 2h. No block — just confirm.
+                  </div>
+                </div>
+
+                <div class="msg-btns" style="margin-top:10px">
+                  <div class="msg-btn approve">✓ Approve all</div>
+                  <div class="msg-btn approve">✓ Approve — except FX re-parent</div>
+                  <div class="msg-btn flag">⚑ Flag FX re-parent for escalation</div>
+                  <div class="msg-btn reject">✗ Reject submission</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg admin">
+              <div class="msg-av admin">DK</div>
+              <div class="bubble">Approve the RTO and regulatory view changes. Flag the FX Settlement re-parenting for escalation to senior admin.</div>
+            </div>
+
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Confirming partial approval of SUB-2026-0047:
+                <div class="val-card" style="margin-top:8px">
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">Wire Transfer — RTO 4h → 2h</span>
+                    <span class="val-status ok">APPROVED</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">Wire Transfer — HKMA regulatory view added</span>
+                    <span class="val-status ok">APPROVED</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">✅</span>
+                    <span class="val-text">SWIFT Messaging — Description updated</span>
+                    <span class="val-status ok">APPROVED</span>
+                  </div>
+                  <div class="val-row">
+                    <span class="val-icon">⚑</span>
+                    <span class="val-text">FX Settlement — Re-parent to Treasury Operations</span>
+                    <span class="val-status warn">ESCALATED</span>
+                  </div>
+                </div>
+                <div style="margin-top:8px;font-size:11px;color:var(--text2)">3 changes applied to production taxonomy. FX Settlement re-parent escalated to Senior Admin queue. Sarah Chen has been notified of the partial approval.</div>
+                <div class="msg-btns">
+                  <div class="msg-btn admin">Review next submission</div>
+                  <div class="msg-btn admin">See full audit log</div>
+                </div>
+              </div>
+            </div>
+
+          </div><div class="input-area">
+            <div class="quick-prompts" id="quick-prompts">
+              <div class="qp" onclick="typePrompt('Update RTO for Wire Transfer to 2 hours')">Update Wire Transfer RTO</div>
+              <div class="qp" onclick="typePrompt('Add HKMA to regulatory views for FX Settlement')">Add regulatory view</div>
+              <div class="qp" onclick="typePrompt('Show me all my pending submissions')">My pending submissions</div>
+              <div class="qp" onclick="typePrompt('What functions have no fallback application?')">Functions with no fallback</div>
+            </div>
+            <div class="input-row">
+              <input class="input-box" id="main-input" placeholder="Describe a change, ask a question, or search a function...">
+              <button class="send-btn">➤</button>
+            </div>
+          </div>
+
+        </div></div></div><div class="view" id="view-planning">
+      <div class="plan-layout">
+        <div class="plan-chat">
+          <div class="agent-hdr">
+            <div class="agent-avatar">🤖</div>
+            <div class="agent-hdr-info">
+              <div class="agent-name">Planning AI Agent</div>
+              <div class="agent-desc">Scenario modelling · dependency analysis · BCP support</div>
+            </div>
+            <div class="agent-status"><div class="agent-status-dot"></div> Ready</div>
+          </div>
+          <div class="convo" style="background:var(--bg2)">
+            <div class="msg user">
+              <div class="msg-av user">SC</div>
+              <div class="bubble">What's our TIER1 coverage if SWIFT Hub goes down?</div>
+            </div>
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                SWIFT Hub failure impacts <strong>11 functions</strong> across Payments:
+                <div class="val-card" style="margin-top:8px">
+                  <div class="val-row"><span class="val-icon" style="color:var(--red)">●</span><span class="val-text">4 × TIER1 — RTO 4–8h</span><span class="val-status fail">CRITICAL</span></div>
+                  <div class="val-row"><span class="val-icon" style="color:var(--yellow)">●</span><span class="val-text">5 × TIER2 — RTO 8–24h</span><span class="val-status warn">MODERATE</span></div>
+                  <div class="val-row"><span class="val-icon" style="color:var(--green)">●</span><span class="val-text">2 × TIER3 — RTO 24–72h</span><span class="val-status ok">LOW</span></div>
+                </div>
+                Temenos available as partial fallback (6 functions). 2 TIER1 functions have no alternate app. Canvas updated →
+                <div class="msg-btns">
+                  <div class="msg-btn">Add Murex failure</div>
+                  <div class="msg-btn">Show LE exposure</div>
+                  <div class="msg-btn">Generate BCP doc</div>
+                </div>
+              </div>
+            </div>
+            <div class="msg user">
+              <div class="msg-av user">SC</div>
+              <div class="bubble">What are my regulatory notification obligations if this breaches 4h?</div>
+            </div>
+            <div class="msg ai">
+              <div class="msg-av ai">🤖</div>
+              <div class="bubble">
+                Breaching 4h RTO triggers mandatory notifications across 3 jurisdictions:
+                <div class="val-card" style="margin-top:8px">
+                  <div class="val-row"><span class="val-icon">🇬🇧</span><span class="val-text">PRA — within 4h of breach</span><span class="val-status fail">URGENT</span></div>
+                  <div class="val-row"><span class="val-icon">🇺🇸</span><span class="val-text">FRB — within 4h of breach</span><span class="val-status fail">URGENT</span></div>
+                  <div class="val-row"><span class="val-icon">🇸🇬</span><span class="val-text">MAS — within 1 business day</span><span class="val-status warn">SAME DAY</span></div>
+                </div>
+                <div class="msg-btns">
+                  <div class="msg-btn">Draft PRA notification</div>
+                  <div class="msg-btn">Export scenario as PDF</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="input-area" style="background:var(--bg2)">
+            <div class="input-row">
+              <input class="input-box" placeholder="Ask about dependencies, scenarios, coverage gaps...">
+              <button class="send-btn">➤</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-canvas">
+          <div class="canvas-tabs">
+            <div class="ctab active">Dependency Map</div>
+            <div class="ctab">Impacted Functions</div>
+            <div class="ctab">LE Exposure</div>
+          </div>
+          <div class="canvas-body">
+            <div class="dep-box">
+              <div class="dep-bg"></div>
+              <svg class="dep-svg" viewBox="0 0 680 200">
+                <line x1="175" y1="50" x2="275" y2="45" stroke="rgba(220,38,38,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <line x1="175" y1="50" x2="275" y2="95" stroke="rgba(220,38,38,0.45)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <line x1="175" y1="50" x2="275" y2="145" stroke="rgba(220,38,38,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+                <line x1="360" y1="45" x2="460" y2="45" stroke="rgba(2,132,199,0.35)" stroke-width="1" stroke-dasharray="4,3"/>
+                <line x1="360" y1="45" x2="460" y2="100" stroke="rgba(2,132,199,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+                <line x1="360" y1="95" x2="460" y2="45" stroke="rgba(2,132,199,0.25)" stroke-width="1" stroke-dasharray="4,3"/>
+                <line x1="360" y1="145" x2="460" y2="100" stroke="rgba(2,132,199,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+                <line x1="360" y1="45" x2="560" y2="70" stroke="rgba(5,150,105,0.25)" stroke-width="1" stroke-dasharray="4,3"/>
+                <circle cx="175" cy="50" r="30" fill="rgba(220,38,38,0.08)" stroke="rgba(220,38,38,0.5)" stroke-width="1.5">
+                  <animate attributeName="r" values="28;35;28" dur="2s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2s" repeatCount="indefinite"/>
+                </circle>
+              </svg>
+              <div class="dep-nd" style="left:108px;top:30px">
+                <div class="nd-box app down">SWIFT Hub</div>
+                <div class="nd-lbl r">🔴 SIMULATED DOWN</div>
+              </div>
+              <div class="dep-nd" style="left:255px;top:25px">
+                <div class="nd-box fn hit">Wire Transfer</div>
+                <div class="nd-lbl r">TIER1 · RTO 4h</div>
+              </div>
+              <div class="dep-nd" style="left:252px;top:75px">
+                <div class="nd-box fn hit">SWIFT Messaging</div>
+                <div class="nd-lbl r">TIER1 · RTO 4h</div>
+              </div>
+              <div class="dep-nd" style="left:260px;top:125px">
+                <div class="nd-box fn">FX Settlement</div>
+                <div class="nd-lbl">TIER1 · RTO 8h</div>
+              </div>
+              <div class="dep-nd" style="left:415px;top:25px">
+                <div class="nd-box le">JPM UK (PRA)</div>
+                <div class="nd-lbl">3 T1 affected</div>
+              </div>
+              <div class="dep-nd" style="left:415px;top:82px">
+                <div class="nd-box le">JPM NA (FRB)</div>
+                <div class="nd-lbl">4 T1 affected</div>
+              </div>
+              <div class="dep-nd" style="left:421px;top:140px">
+                <div class="nd-box le">JPM SG (MAS)</div>
+                <div class="nd-lbl">2 T1 affected</div>
+              </div>
+              <div class="dep-nd" style="left:530px;top:52px">
+                <div class="nd-box fb">Temenos ✓</div>
+                <div class="nd-lbl g">Fallback · 6 fns</div>
+              </div>
+            </div>
+            <div class="igrid">
+              <div class="icard">
+                <div class="icard-title">Impacted Functions (11)</div>
+                <div class="irow"><div class="idot" style="background:var(--red)"></div><span class="iname">Wire Transfer</span><div class="pbar-w"><div class="pbar" style="width:14%;background:var(--red)"></div></div><span class="irto" style="color:var(--red)">4h</span></div>
+                <div class="irow"><div class="idot" style="background:var(--red)"></div><span class="iname">SWIFT Messaging</span><div class="pbar-w"><div class="pbar" style="width:14%;background:var(--red)"></div></div><span class="irto" style="color:var(--red)">4h</span></div>
+                <div class="irow"><div class="idot" style="background:var(--yellow)"></div><span class="iname">FX Settlement</span><div class="pbar-w"><div class="pbar" style="width:28%;background:var(--yellow)"></div></div><span class="irto" style="color:var(--yellow)">8h</span></div>
+                <div class="irow"><div class="idot" style="background:var(--yellow)"></div><span class="iname">Trade Confirm.</span><div class="pbar-w"><div class="pbar" style="width:28%;background:var(--yellow)"></div></div><span class="irto" style="color:var(--yellow)">8h</span></div>
+              </div>
+              <div class="icard">
+                <div class="icard-title">Legal Entity Exposure</div>
+                <div class="le-r"><span>🇺🇸 JPM NA (FRB)</span><span class="le-c">4 TIER1</span></div>
+                <div class="le-r"><span>🇬🇧 JPM UK (PRA)</span><span class="le-c">3 TIER1</span></div>
+                <div class="le-r"><span>🇸🇬 JPM SG (MAS)</span><span class="le-c">2 TIER1</span></div>
+                <div class="le-r"><span>🇭🇰 JPM HK (HKMA)</span><span class="le-c" style="color:var(--yellow)">1 TIER1</span></div>
+                <div class="warn-box">⚠️ 3 jurisdictions trigger regulatory notification on 4h breach</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="view" id="view-incident">
+      <div class="inc-wrapper">
+        <div class="inc-banner">
+          <span class="inc-pill">🔴 P1</span>
+          <div>
+            <div class="inc-t">INC-2026-0221 — SWIFT Hub Outage</div>
+            <div class="inc-m">Declared 09:14 UTC · 38 min active · Owner: James Park</div>
+          </div>
+          <div class="inc-timer"><span class="inc-pulse">●</span> LIVE</div>
+          <div class="inc-acts">
+            <button class="btn btn-ghost">📋 Status Update</button>
+            <button class="btn btn-red">✅ Resolve</button>
+          </div>
+        </div>
+        <div class="inc-layout">
+          <div class="inc-l">
+            <div class="isec">Situation</div>
+            <div class="srow"><div class="sdot" style="background:var(--red)"></div><span>SWIFT Hub <strong>DOWN</strong></span></div>
+            <div class="srow"><div class="sdot" style="background:var(--red)"></div><span><strong>11</strong> functions impacted</span></div>
+            <div class="srow"><div class="sdot" style="background:var(--red)"></div><span><strong>4</strong> jurisdictions</span></div>
+            <div class="srow"><div class="sdot" style="background:var(--yellow)"></div><span>Temenos: assessing</span></div>
+            <div class="isec">Timeline</div>
+            <div class="tl">
+              <div class="tli"><div class="tld r">●</div><div><div class="tltime">09:14</div><div class="tltext">SWIFT Hub outage detected</div></div></div>
+              <div class="tli"><div class="tld b">●</div><div><div class="tltime">09:21</div><div class="tltext">IT Ops notified · P1 raised</div></div></div>
+              <div class="tli"><div class="tld y">●</div><div><div class="tltime">09:31</div><div class="tltext">BC team engaged</div></div></div>
+              <div class="tli"><div class="tld b">●</div><div><div class="tltime">09:52</div><div class="tltext">Temenos fallback assessment</div></div></div>
+            </div>
+          </div>
+          <div class="inc-c">
+            <div class="inc-agent-hdr">
+              <span style="font-size:11px;font-weight:600;color:var(--red)">🤖 AI INCIDENT COMMANDER</span>
+              <span style="font-size:10px;color:var(--text3);margin-left:auto">11 functions · 4 contracts · 3 regulators loaded</span>
+            </div>
+            <div class="convo" style="background:var(--bg)">
+              <div class="msg ai">
+                <div class="msg-av ai">🤖</div>
+                <div class="directive">
+                  <div class="dir-hdr">
+                    <div>
+                      <div class="dir-title">Immediate Action Plan · 09:52 UTC</div>
+                      <div class="dir-sub">Wire Transfer RTO breach in 3h 22m · 4 TIER1 at risk</div>
+                    </div>
+                  </div>
+                  <div class="dir-steps">
+                    <div class="dstep"><div class="dsn">1</div><div class="dst"><strong>Activate Temenos fallback</strong> for Wire Transfer now. Contact ops-temenos@bank.com · covers 6 of 11 functions.</div></div>
+                    <div class="dstep"><div class="dsn">2</div><div class="dst"><strong>Notify PRA and FRB</strong> — 3 TIER1 functions under each scope. Pre-drafted templates ready. <span style="color:var(--accent)">Open draft →</span></div></div>
+                    <div class="dstep"><div class="dsn">3</div><div class="dst"><strong>Engage HSBC agent bank</strong> for manual FX cover (contract CTR-2024-089).</div></div>
+                    <div class="dstep"><div class="dsn">4</div><div class="dst"><strong>Start incident log</strong> for regulatory timeline evidence (FRB, PRA, MAS).</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="risk-a h"><span class="ri">🔴</span><div class="rt"><strong>Wire Transfer RTO breach in 3h 22m</strong>FRB + PRA notification window opens on breach. Temenos activation is your only viable path.</div></div>
+              <div class="risk-a m"><span class="ri">🟡</span><div class="rt"><strong>No full fallback for FX Settlement</strong>Temenos covers 60% of volume. Agent bank activation recommended if outage persists past 2h.</div></div>
+              <div class="msg ai">
+                <div class="msg-av ai">🤖</div>
+                <div class="bubble">
+                  If outage runs past <strong>13:14 UTC</strong>, regulatory hard deadlines are:
+                  <div class="val-card" style="margin-top:6px">
+                    <div class="val-row"><span class="val-icon">🇬🇧</span><span class="val-text">PRA notification</span><span class="val-status fail">by 17:14 UTC</span></div>
+                    <div class="val-row"><span class="val-icon">🇺🇸</span><span class="val-text">FRB notification</span><span class="val-status fail">by 17:14 UTC</span></div>
+                    <div class="val-row"><span class="val-icon">🇸🇬</span><span class="val-text">MAS notification</span><span class="val-status warn">by COB today</span></div>
+                  </div>
+                  <div class="msg-btns">
+                    <div class="msg-btn">Draft PRA filing</div>
+                    <div class="msg-btn">Draft exec update</div>
+                    <div class="msg-btn">What's my next step?</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="input-area" style="border-top:1px solid rgba(220,38,38,0.3);background:rgba(220,38,38,0.04)">
+              <div class="input-row">
+                <input class="input-box" placeholder="Ask the AI commander anything about this incident..." style="border-color:rgba(220,38,38,0.3);background:#ffffff;">
+                <button class="send-btn" style="background:var(--red)">➤</button>
+              </div>
+            </div>
+          </div>
+          <div class="inc-r">
+            <div class="rto-c">
+              <div class="rto-ct">⏰ RTO Countdown</div>
+              <div class="rto-i">
+                <div class="rto-top"><span class="rto-fn">Wire Transfer</span><span class="rto-rem d">3h 22m</span></div>
+                <div class="rto-bar-w"><div class="rto-bar-f" style="width:13%;background:var(--red)"></div></div>
+              </div>
+              <div class="rto-i">
+                <div class="rto-top"><span class="rto-fn">SWIFT Messaging</span><span class="rto-rem d">3h 22m</span></div>
+                <div class="rto-bar-w"><div class="rto-bar-f" style="width:13%;background:var(--red)"></div></div>
+              </div>
+              <div class="rto-i">
+                <div class="rto-top"><span class="rto-fn">FX Settlement</span><span class="rto-rem w">7h 22m</span></div>
+                <div class="rto-bar-w"><div class="rto-bar-f" style="width:7%;background:var(--yellow)"></div></div>
+              </div>
+              <div class="rto-i">
+                <div class="rto-top"><span class="rto-fn">Trade Confirmation</span><span class="rto-rem o">15h 22m</span></div>
+                <div class="rto-bar-w"><div class="rto-bar-f" style="width:50%;background:var(--green)"></div></div>
+              </div>
+            </div>
+            <div class="ncard">
+              <div class="ncard-t">📣 Notify</div>
+              <div class="nbtn"><span>🇬🇧</span><div><div style="font-size:11px;color:var(--text)">PRA Team</div><div class="nbtn-sub">Required &lt;4h post-breach</div></div></div>
+              <div class="nbtn"><span>🇺🇸</span><div><div style="font-size:11px;color:var(--text)">FRB Team</div><div class="nbtn-sub">Required &lt;4h post-breach</div></div></div>
+              <div class="nbtn"><span>🇸🇬</span><div><div style="font-size:11px;color:var(--text)">MAS Team</div><div class="nbtn-sub">By COB today</div></div></div>
+              <div class="nbtn"><span>💬</span><div><div style="font-size:11px;color:var(--text)">IT Ops</div><div class="nbtn-sub">Notified 09:21 UTC</div></div></div>
+            </div>
+            <div class="ncard">
+              <div class="ncard-t">📄 Contracts</div>
+              <div class="nbtn"><span>✅</span><div><div>SWIFT SLA</div><div class="nbtn-sub">Active · 4h response</div></div></div>
+              <div class="nbtn"><span>✅</span><div><div>Temenos SLA</div><div class="nbtn-sub">Standby · activating</div></div></div>
+              <div class="nbtn"><span>⚠️</span><div><div>HSBC Agent Bank</div><div class="nbtn-sub">Verify availability</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div></div><script>
+// Mode switching
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach((t,i) => {
+    t.classList.remove('active');
+    if((i===0&&mode==='taxonomy')||(i===1&&mode==='planning')||(i===2&&mode==='incident')) t.classList.add('active');
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+mode).classList.add('active');
+}
+
+// Role switching
+function switchRole(role) {
+  const btnR = document.getElementById('btn-resiliency');
+  const btnA = document.getElementById('btn-admin');
+  const desc = document.getElementById('agent-desc');
+  const ctx  = document.getElementById('role-context-text');
+  const badge = document.getElementById('role-badge');
+  const avatar = document.getElementById('user-avatar');
+  const convoR = document.getElementById('convo-resiliency');
+  const convoA = document.getElementById('convo-admin');
+  const qp    = document.getElementById('quick-prompts');
+  const input = document.getElementById('main-input');
+
+  if(role === 'admin') {
+    btnR.classList.remove('active');
+    btnA.classList.add('active');
+    desc.textContent = 'Helping admins review, summarise and approve taxonomy change submissions';
+    ctx.textContent  = '← Reviewing pending submissions via AI agent';
+    badge.textContent = 'ADMIN REVIEWER';
+    badge.style.borderColor = 'rgba(124,58,237,0.4)';
+    badge.style.color = 'var(--purple)';
+    avatar.textContent = 'DK';
+    avatar.style.background = 'linear-gradient(135deg,rgba(124,58,237,0.7),rgba(100,60,200,0.7))';
+    convoR.style.display = 'none';
+    convoA.style.display = 'flex';
+    qp.innerHTML = `
+      <div class="qp admin" onclick="typePrompt('Summarise all pending submissions grouped by platform')">Summarise pending submissions</div>
+      <div class="qp admin" onclick="typePrompt('Show me all high-risk flags')">High-risk flags only</div>
+      <div class="qp admin" onclick="typePrompt('Approve all RTO changes for Payments platform')">Approve RTO changes</div>
+      <div class="qp admin" onclick="typePrompt('How many changes were submitted this week?')">Weekly activity</div>
+    `;
+    input.placeholder = 'Review submissions, approve changes, query the audit trail...';
+  } else {
+    btnA.classList.remove('active');
+    btnR.classList.add('active');
+    desc.textContent = 'Helping resiliency analysts submit, validate and preview taxonomy changes';
+    ctx.textContent  = 'Submit and manage taxonomy changes via the AI agent →';
+    badge.textContent = 'RESILIENCY ANALYST';
+    badge.style.borderColor = 'var(--border2)';
+    badge.style.color = 'var(--text3)';
+    avatar.textContent = 'SC';
+    avatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--purple))';
+    convoA.style.display = 'none';
+    convoR.style.display = 'flex';
+    qp.innerHTML = `
+      <div class="qp" onclick="typePrompt('Update RTO for Wire Transfer to 2 hours')">Update Wire Transfer RTO</div>
+      <div class="qp" onclick="typePrompt('Add HKMA to regulatory views for FX Settlement')">Add regulatory view</div>
+      <div class="qp" onclick="typePrompt('Show me all my pending submissions')">My pending submissions</div>
+      <div class="qp" onclick="typePrompt('What functions have no fallback application?')">Functions with no fallback</div>
+    `;
+    input.placeholder = 'Describe a change, ask a question, or search a function...';
+  }
+}
+
+function selectFn(el) {
+  document.querySelectorAll('.fn-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function typePrompt(text) {
+  document.getElementById('main-input').value = text;
+  document.getElementById('main-input').focus();
+}
+
+function loadDemo(type) {}
+
+// Live clock
+setInterval(() => {
+  const el = document.getElementById('clock');
+  if(el) {
+    const now = new Date();
+    const h = String(now.getUTCHours()).padStart(2,'0');
+    const m = String(now.getUTCMinutes()).padStart(2,'0');
+    el.textContent = h+':'+m+' UTC';
+  }
+},10000);
+</script>
+</body>
+</html>

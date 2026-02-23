@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resiliency Intelligence Platform v3 (Light)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #ffffff;
+  --bg2:    #f8fafc;
+  --bg3:    #f1f5f9;
+  --bg4:    #e2e8f0;
+  --border: #e2e8f0;
+  --bord2:  #cbd5e1;
+  --text:   #0f172a;
+  --text2:  #475569;
+  --text3:  #64748b;
+  --acc:    #0284c7;
+  --acc2:   #0369a1;
+  --grn:    #059669;
+  --ylw:    #d97706;
+  --red:    #dc2626;
+  --pur:    #7c3aed;
+  --ora:    #ea580c;
+  --t1c:    #dc2626;
+  --t2c:    #d97706;
+  --t3c:    #059669;
+  --fm:     'IBM Plex Sans', sans-serif;
+  --mono:   'IBM Plex Mono', monospace;
+  --cond:   'IBM Plex Sans Condensed', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);font-size:13px;display:flex;flex-direction:column;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(2,132,199,0.02) 3px,rgba(2,132,199,0.02) 4px);pointer-events:none;z-index:9000;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{height:44px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:0;flex-shrink:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--cond);font-size:14px;font-weight:700;letter-spacing:.08em;color:var(--text);padding-right:18px;border-right:1px solid var(--border);}
+.logo-mark{width:24px;height:24px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffffff;}
+.nav-tabs{display:flex;height:100%;}
+.ntab{padding:0 16px;height:100%;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;letter-spacing:.04em;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3);transition:all .18s;text-transform:uppercase;border-right:1px solid var(--border);}
+.ntab:first-child{margin-left:12px;}
+.ntab:hover{color:var(--text);background:rgba(0,0,0,.03);}
+.ntab.on{color:var(--acc);border-bottom-color:var(--acc);background:rgba(2,132,199,.05);}
+.ntab.inc{color:var(--red)!important;border-bottom-color:var(--red)!important;background:rgba(220,38,38,.07)!important;}
+.tdot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.blink{animation:bl 1s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.15}}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:9px;}
+.spill{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.04em;}
+.spill.ok{background:rgba(5,150,105,.1);color:var(--grn);border:1px solid rgba(5,150,105,.3);}
+.spill.inc{background:rgba(220,38,38,.12);color:var(--red);border:1px solid rgba(220,38,38,.35);animation:pb 2s infinite;}
+@keyframes pb{0%,100%{border-color:rgba(220,38,38,.35)}50%{border-color:rgba(220,38,38,.8)}}
+.utag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;border:1px solid var(--bord2);color:var(--text3);letter-spacing:.05em;}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#ffffff;}
+
+/* ═══ SHELL ═══ */
+.shell{display:flex;flex:1;overflow:hidden;}
+
+/* ═══ PANE 1 — HIERARCHY TREE ═══ */
+.tree-pane{width:248px;min-width:248px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.tree-search-wrap{padding:9px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tree-search{width:100%;background:rgba(0,0,0,.04);border:1px solid var(--bord2);border-radius:3px;padding:5px 10px;font-size:11px;color:var(--text);font-family:var(--fm);outline:none;}
+.tree-search:focus{border-color:var(--acc);background:#ffffff;}
+.tree-search::placeholder{color:var(--text3);}
+.tree-scroll{flex:1;overflow-y:auto;padding:6px 0;}
+
+/* Tree nodes */
+.tg{} /* group */
+.tg-hdr{display:flex;align-items:center;gap:0;padding:5px 10px;cursor:pointer;color:var(--text2);font-size:11px;font-weight:600;letter-spacing:.03em;user-select:none;transition:background .15s;}
+.tg-hdr:hover{background:rgba(0,0,0,.04);}
+.tg-hdr .caret{font-size:9px;color:var(--text3);width:12px;transition:transform .2s;flex-shrink:0;}
+.tg-hdr .caret.open{transform:rotate(90deg);}
+.tg-hdr .g-icon{font-size:11px;width:16px;text-align:center;flex-shrink:0;}
+.tg-hdr .g-name{flex:1;color:var(--text);}
+.tg-hdr .g-count{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.tg-children{display:none;}
+.tg-children.open{display:block;}
+
+/* Team level */
+.team-row{display:flex;align-items:center;gap:0;padding:4px 10px 4px 22px;cursor:pointer;color:var(--text2);font-size:11px;transition:background .15s;user-select:none;}
+.team-row:hover{background:rgba(0,0,0,.03);}
+.team-row .caret{font-size:8px;color:var(--text3);width:11px;transition:transform .2s;}
+.team-row .caret.open{transform:rotate(90deg);}
+.team-row .t-name{flex:1;font-weight:500;}
+.team-row .t-count{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.team-fns{display:none;}
+.team-fns.open{display:block;}
+
+/* Function rows */
+.fn-row{display:flex;align-items:center;gap:6px;padding:5px 10px 5px 34px;cursor:pointer;font-size:11px;color:var(--text2);transition:all .15s;border-left:2px solid transparent;position:relative;}
+.fn-row:hover{background:rgba(0,0,0,.04);color:var(--text);}
+.fn-row.sel{background:rgba(2,132,199,.07);color:var(--acc);border-left-color:var(--acc);}
+.fn-row .fn-tier{width:16px;height:16px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:600;flex-shrink:0;}
+.fn-tier.t1{background:rgba(220,38,38,.18);color:var(--t1c);}
+.fn-tier.t2{background:rgba(217,119,6,.14);color:var(--t2c);}
+.fn-tier.t3{background:rgba(5,150,105,.12);color:var(--t3c);}
+.fn-row .fn-label{flex:1;line-height:1.3;}
+.fn-row .fn-status{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.fn-status.active{background:var(--grn);}
+.fn-status.review{background:var(--ylw);}
+.fn-status.pending{background:var(--pur);}
+.fn-status.inactive{background:var(--text3);}
+.fn-change-dot{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:var(--pur);}
+
+/* ═══ PANE 2 — DETAIL / PROPERTIES ═══ */
+.detail-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--bg);}
+
+/* Breadcrumb */
+.breadcrumb{padding:7px 16px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);flex-shrink:0;}
+.bc-sep{color:var(--text3);font-size:10px;}
+.bc-item{cursor:pointer;transition:color .15s;}
+.bc-item:hover{color:var(--acc);}
+.bc-item.current{color:var(--text);font-weight:500;}
+
+/* Function header */
+.fn-header{padding:14px 16px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.fn-header-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.fn-header-icon{width:36px;height:36px;border-radius:4px;background:rgba(2,132,199,.1);border:1px solid rgba(2,132,199,.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.fn-header-main{flex:1;}
+.fn-header-name{font-family:var(--cond);font-size:18px;font-weight:700;color:var(--text);letter-spacing:.02em;line-height:1.2;}
+.fn-header-path{font-size:11px;color:var(--text3);margin-top:3px;}
+.fn-header-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;font-family:var(--mono);letter-spacing:.04em;}
+.badge.t1{background:rgba(220,38,38,.15);color:var(--t1c);border:1px solid rgba(220,38,38,.3);}
+.badge.t2{background:rgba(217,119,6,.12);color:var(--t2c);border:1px solid rgba(217,119,6,.28);}
+.badge.t3{background:rgba(5,150,105,.1);color:var(--t3c);border:1px solid rgba(5,150,105,.25);}
+.badge.active{background:rgba(5,150,105,.1);color:var(--grn);border:1px solid rgba(5,150,105,.25);}
+.badge.review{background:rgba(217,119,6,.1);color:var(--ylw);border:1px solid rgba(217,119,6,.25);}
+.badge.pending{background:rgba(124,58,237,.1);color:var(--pur);border:1px solid rgba(124,58,237,.25);}
+.badge.plain{background:rgba(0,0,0,.06);color:var(--text2);border:1px solid var(--bord2);}
+.fn-kpi-row{display:flex;gap:0;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.fn-kpi{flex:1;padding:7px 12px;border-right:1px solid var(--border);text-align:center;background:#ffffff;}
+.fn-kpi:last-child{border-right:none;}
+.fn-kpi-val{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);}
+.fn-kpi-val.r{color:var(--t1c);}
+.fn-kpi-val.y{color:var(--t2c);}
+.fn-kpi-val.g{color:var(--grn);}
+.fn-kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-top:2px;}
+
+/* Tab bar */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.tab{padding:9px 15px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+.tab .tbadge{display:inline-block;margin-left:4px;padding:1px 5px;border-radius:2px;font-family:var(--mono);font-size:9px;background:rgba(2,132,199,.12);color:var(--acc);}
+.tab .tbadge.r{background:rgba(124,58,237,.15);color:var(--pur);}
+
+/* Tab content */
+.tab-content{flex:1;overflow-y:auto;padding:14px 16px;}
+.tab-panel{display:none;}
+.tab-panel.on{display:block;}
+
+/* Property sections */
+.prop-section{margin-bottom:20px;}
+.prop-section-title{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.prop-section-title .pts-action{margin-left:auto;font-size:10px;color:var(--acc);cursor:pointer;text-transform:none;letter-spacing:normal;font-family:var(--fm);}
+.prop-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.prop-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.prop-grid.one{grid-template-columns:1fr;}
+.prop-cell{padding:8px 12px;background:var(--bg);}
+.prop-cell.span2{grid-column:span 2;}
+.prop-cell.span3{grid-column:span 3;}
+.pc-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;}
+.pc-val{font-size:12px;color:var(--text);line-height:1.4;}
+.pc-val.mono{font-family:var(--mono);}
+.pc-val.r{color:var(--t1c);}
+.pc-val.y{color:var(--t2c);}
+.pc-val.g{color:var(--grn);}
+.pc-val.muted{color:var(--text2);}
+.pc-edit{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:var(--text3);cursor:pointer;transition:color .15s;}
+.pc-edit:hover{color:var(--acc);}
+
+/* Reg views tags */
+.reg-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.reg-tag{padding:2px 7px;border-radius:2px;font-size:10px;font-family:var(--mono);background:rgba(2,132,199,.12);color:var(--acc);border:1px solid rgba(2,132,199,.3);}
+
+/* Description */
+.desc-text{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* AI suggestion inline */
+.ai-inline{display:flex;gap:8px;padding:8px 10px;background:rgba(2,132,199,.04);border:1px solid rgba(2,132,199,.14);border-radius:3px;margin-top:6px;font-size:11px;color:var(--text2);}
+.ai-inline-icon{color:var(--acc);flex-shrink:0;font-size:12px;}
+.ai-inline a{color:var(--acc);cursor:pointer;}
+
+/* ── APP MAPPING TABLE ── */
+.mapping-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.mt-search{background:rgba(0,0,0,.04);border:1px solid var(--bord2);border-radius:3px;padding:5px 10px;font-size:11px;color:var(--text);font-family:var(--fm);outline:none;width:200px;}
+.mt-search:focus{border-color:var(--acc);background:#ffffff;}
+.mt-search::placeholder{color:var(--text3);}
+.btn-sm{padding:5px 11px;border-radius:3px;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:var(--fm);transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-ghost{background:transparent;border:1px solid var(--bord2);color:var(--text2);}
+.btn-ghost:hover{border-color:var(--acc);color:var(--acc);}
+.btn-acc{background:var(--acc);color:#ffffff;font-weight:600;}
+.btn-acc:hover{background:#0369a1;}
+.tbl-wrap{border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;background:#ffffff;}
+thead tr{background:var(--bg3);}
+th{padding:7px 11px;text-align:left;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:8px 11px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr{background:var(--bg);transition:background .12s;}
+tbody tr:hover{background:var(--bg2);}
+.cell-name{font-weight:500;color:var(--text);}
+.cell-mono{font-family:var(--mono);font-size:10px;}
+.status-pill-sm{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:2px;font-size:10px;font-family:var(--mono);}
+.sp-active{background:rgba(5,150,105,.1);color:var(--grn);border:1px solid rgba(5,150,105,.25);}
+.sp-review{background:rgba(217,119,6,.1);color:var(--ylw);border:1px solid rgba(217,119,6,.25);}
+.sp-pending{background:rgba(124,58,237,.1);color:var(--pur);border:1px solid rgba(124,58,237,.25);}
+.sp-inactive{background:rgba(0,0,0,.05);color:var(--text3);border:1px solid var(--border);}
+.change-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:2px;font-size:10px;}
+.cc-add{background:rgba(5,150,105,.1);color:var(--grn);border:1px solid rgba(5,150,105,.2);}
+.cc-mod{background:rgba(2,132,199,.1);color:var(--acc);border:1px solid rgba(2,132,199,.2);}
+.cc-rem{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.2);}
+.cc-none{background:rgba(0,0,0,.04);color:var(--text3);border:1px solid var(--border);}
+.tbl-action{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:2px;font-size:10px;cursor:pointer;border:1px solid var(--bord2);color:var(--text3);background:transparent;font-family:var(--fm);transition:all .15s;}
+.tbl-action:hover{border-color:var(--acc);color:var(--acc);}
+.ai-row-suggest{font-size:10px;color:var(--acc);cursor:pointer;}
+.ai-row-suggest:hover{text-decoration:underline;}
+
+/* Change history */
+.history-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.history-item:last-child{border-bottom:none;}
+.hi-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;background:#ffffff;}
+.hi-dot.approved{background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);}
+.hi-dot.pending{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);}
+.hi-dot.rejected{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);}
+.hi-meta{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+.hi-changes{margin-top:7px;display:flex;flex-direction:column;gap:4px;}
+.hi-change-row{display:flex;gap:8px;font-size:11px;align-items:baseline;}
+.hcr-field{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);width:100px;flex-shrink:0;}
+.hcr-old{color:rgba(220,38,38,.8);text-decoration:line-through;font-size:10px;}
+.hcr-arr{color:var(--text3);font-size:10px;}
+.hcr-new{color:var(--grn);font-size:11px;}
+
+/* ═══ PANE 3 — AI PANEL (collapsible) ═══ */
+.ai-pane{width:300px;min-width:300px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s;position:relative;}
+.ai-pane.collapsed{width:36px;min-width:36px;}
+.ai-toggle{position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:18px;height:48px;background:var(--bg3);border:1px solid var(--border);border-right:none;border-radius:4px 0 0 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);transition:all .2s;z-index:10;}
+.ai-toggle:hover{color:var(--acc);background:var(--bg4);}
+.ai-pane.collapsed .ai-toggle{left:0;border-radius:0;width:36px;height:100%;position:absolute;top:0;transform:none;border:none;border-left:1px solid var(--border);flex-direction:column;gap:4px;font-size:11px;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.05em;padding:16px 0;}
+.ai-pane.collapsed .ai-toggle .toggle-arrow{display:none;}
+.ai-inner{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.ai-pane.collapsed .ai-inner{display:none;}
+
+/* AI panel header */
+.ai-pane-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0;background:var(--bg2);}
+.ai-orb{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,rgba(2,132,199,.2),rgba(3,105,161,.2));border:1px solid rgba(2,132,199,.35);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;position:relative;}
+.ai-orb::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(2,132,199,.13);animation:orb 3s infinite;}
+@keyframes orb{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:0;transform:scale(1.2)}}
+.ai-pane-title{font-size:12px;font-weight:600;color:var(--text);}
+.ai-pane-sub{font-size:10px;color:var(--text3);}
+.ai-ready{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--grn);margin-left:auto;}
+.ai-ready-dot{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:gp 2s infinite;}
+@keyframes gp{0%,100%{box-shadow:0 0 4px rgba(5,150,105,.5)}50%{box-shadow:0 0 10px rgba(5,150,105,.8)}}
+
+/* Context card */
+.ai-ctx-card{margin:10px;padding:9px 10px;background:rgba(2,132,199,.04);border:1px solid rgba(2,132,199,.13);border-radius:3px;font-size:11px;flex-shrink:0;}
+.ai-ctx-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.ai-ctx-fn{font-weight:600;color:var(--text);font-size:12px;margin-bottom:4px;}
+.ai-ctx-props{display:flex;flex-wrap:wrap;gap:4px;}
+.ai-ctx-prop{padding:2px 6px;border-radius:2px;background:#ffffff;border:1px solid var(--bord2);font-size:10px;color:var(--text2);}
+.ai-ctx-prop strong{color:var(--text);}
+
+/* AI conversation */
+.ai-convo{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:10px;}
+.am{display:flex;gap:7px;}
+.am.usr{flex-direction:row-reverse;}
+.am-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;}
+.am-av.ai{background:linear-gradient(135deg,rgba(2,132,199,.22),rgba(3,105,161,.22));color:var(--acc);border:1px solid rgba(2,132,199,.28);font-size:11px;}
+.am-av.usr{background:linear-gradient(135deg,var(--acc2),var(--pur));color:#ffffff;}
+.am-av.adm{background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(100,60,200,.35));color:var(--pur);border:1px solid rgba(124,58,237,.35);}
+.am-bub{padding:8px 10px;border-radius:5px;font-size:11px;line-height:1.6;max-width:230px;}
+.am.ai .am-bub{background:#ffffff;border:1px solid var(--border);color:var(--text);border-bottom-left-radius:2px;}
+.am.usr .am-bub{background:rgba(2,132,199,.09);border:1px solid rgba(2,132,199,.2);color:var(--text);border-bottom-right-radius:2px;}
+.am.adm .am-bub{background:rgba(124,58,237,.09);border:1px solid rgba(124,58,237,.2);color:var(--text);border-bottom-right-radius:2px;}
+
+/* AI diff mini */
+.mini-diff{margin-top:7px;border:1px solid var(--border);border-radius:3px;overflow:hidden;font-size:10px;}
+.md-hdr{padding:4px 8px;background:rgba(2,132,199,.06);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--acc);}
+.md-row{display:flex;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);align-items:baseline;}
+.md-row:last-child{border-bottom:none;}
+.md-field{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;width:72px;flex-shrink:0;}
+.md-old{color:rgba(220,38,38,.8);text-decoration:line-through;flex:1;}
+.md-arr{color:var(--text3);font-size:9px;flex-shrink:0;}
+.md-new{color:var(--grn);flex:1;}
+.md-nc{color:var(--text2);font-style:italic;flex:1;}
+
+/* Validation mini */
+.mini-val{margin-top:6px;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.mv-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);font-size:10px;}
+.mv-row:last-child{border-bottom:none;}
+.mv-ico{flex-shrink:0;}
+.mv-text{flex:1;color:var(--text2);}
+.mv-stat{font-family:var(--mono);font-size:9px;flex-shrink:0;}
+.mv-ok{color:var(--grn);}
+.mv-warn{color:var(--ylw);}
+.mv-fail{color:var(--red);}
+
+/* Receipt mini */
+.mini-receipt{margin-top:6px;padding:8px;background:rgba(5,150,105,.05);border:1px solid rgba(5,150,105,.18);border-radius:3px;font-size:10px;}
+.mr-title{color:var(--grn);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.mr-id{color:var(--text);font-family:var(--mono);font-size:10px;margin-bottom:4px;font-weight:600;}
+.mr-rows{color:var(--text2);line-height:1.8;}
+.mr-rows span{color:var(--text);font-weight:600;}
+
+/* Admin summary mini */
+.mini-summary{margin-top:7px;border:1px solid var(--border);border-radius:3px;overflow:hidden;font-size:10px;}
+.ms-hdr{padding:5px 8px;background:rgba(124,58,237,.07);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--pur);display:flex;justify-content:space-between;}
+.ms-row{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-bottom:1px solid var(--border);}
+.ms-row:last-child{border-bottom:none;}
+.ms-type{color:var(--text2);}
+.ms-count{font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:2px;}
+.ms-count.r{background:rgba(220,38,38,.12);color:var(--red);}
+.ms-count.y{background:rgba(217,119,6,.1);color:var(--ylw);}
+.ms-count.g{background:rgba(5,150,105,.1);color:var(--grn);}
+.ms-count.p{background:rgba(124,58,237,.1);color:var(--pur);}
+
+/* Risk mini */
+.mini-risk{margin-top:6px;padding:7px 8px;border-radius:3px;display:flex;gap:7px;align-items:flex-start;font-size:10px;}
+.mini-risk.h{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);}
+.mini-risk.m{background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.22);}
+.mri{flex-shrink:0;}
+.mrt strong{display:block;font-size:10px;margin-bottom:2px;}
+.mini-risk.h .mrt strong{color:var(--red);}
+.mini-risk.m .mrt strong{color:var(--ylw);}
+.mrt{color:var(--text2);line-height:1.5;}
+
+/* Action buttons in AI */
+.ai-btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+.aibtn{padding:3px 8px;border-radius:2px;font-size:10px;cursor:pointer;background:rgba(2,132,199,.06);border:1px solid rgba(2,132,199,.2);color:var(--acc);font-family:var(--fm);transition:all .15s;}
+.aibtn:hover{background:rgba(2,132,199,.14);}
+.aibtn.apr{background:rgba(5,150,105,.09);border-color:rgba(5,150,105,.25);color:var(--grn);}
+.aibtn.rej{background:rgba(220,38,38,.09);border-color:rgba(220,38,38,.25);color:var(--red);}
+.aibtn.flg{background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.22);color:var(--ylw);}
+
+/* AI input */
+.ai-input-area{padding:8px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.ai-qp{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px;}
+.qpill{padding:3px 8px;border-radius:2px;font-size:10px;cursor:pointer;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.1);color:var(--text2);white-space:nowrap;transition:all .15s;}
+.qpill:hover{background:rgba(0,0,0,.08);color:var(--text);}
+.ai-inp-row{display:flex;gap:6px;align-items:center;}
+.ai-inp{flex:1;background:#ffffff;border:1px solid var(--bord2);border-radius:3px;padding:7px 9px;color:var(--text);font-family:var(--fm);font-size:11px;outline:none;}
+.ai-inp:focus{border-color:var(--acc);}
+.ai-inp::placeholder{color:var(--text3);}
+.ai-send{width:28px;height:28px;border-radius:3px;background:var(--acc);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ffffff;font-weight:700;transition:all .15s;flex-shrink:0;}
+.ai-send:hover{background:#0369a1;}
+
+/* Role switch */
+.role-bar{padding:0 16px;background:var(--bg2);border-bottom:1px solid var(--border);height:34px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.role-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);}
+.rbtn{padding:3px 12px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--bord2);background:#ffffff;color:var(--text2);font-family:var(--fm);transition:all .18s;}
+.rbtn:first-of-type{border-radius:3px 0 0 3px;}
+.rbtn:last-of-type{border-radius:0 3px 3px 0;border-left:none;}
+.rbtn.on{background:rgba(2,132,199,.11);border-color:var(--acc);color:var(--acc);}
+.rbtn.adm.on{background:rgba(124,58,237,.11);border-color:var(--pur);color:var(--pur);}
+.role-bar-right{margin-left:auto;font-size:11px;color:var(--text3);}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">🛡</div> RIP
+  </div>
+  <div class="nav-tabs">
+    <div class="ntab on" onclick="setTab(this,'taxonomy')"><span class="tdot"></span> Taxonomy</div>
+    <div class="ntab" onclick="setTab(this,'apps')"><span class="tdot"></span> App Mapping</div>
+    <div class="ntab" onclick="setTab(this,'planning')"><span class="tdot"></span> Planning</div>
+    <div class="ntab inc" onclick="setTab(this,'incident')"><span class="tdot blink"></span> Incident Active</div>
+  </div>
+  <div class="tb-right">
+    <div class="spill ok"><span>●</span> NORMAL OPS</div>
+    <div id="clk" style="font-size:10px;color:var(--text3);font-family:var(--mono)">10:04 UTC</div>
+    <div class="utag" id="rtag">RESILIENCY ANALYST</div>
+    <div class="av" id="uav" style="background:linear-gradient(135deg,var(--acc2),var(--pur))">SC</div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <div class="tree-pane">
+    <div class="tree-search-wrap">
+      <input class="tree-search" placeholder="🔍 Search platforms, teams, functions...">
+    </div>
+    <div class="tree-scroll">
+
+      <div class="tg">
+        <div class="tg-hdr" onclick="toggleTree(this)">
+          <span class="caret open">▶</span>
+          <span class="g-icon">🏛</span>
+          <span class="g-name">Payments Platform</span>
+          <span class="g-count">23</span>
+        </div>
+        <div class="tg-children open">
+
+          <div class="team-row" onclick="toggleTeam(this)">
+            <span class="caret open">▶</span>
+            <span class="t-name">Settlement &amp; Clearing</span>
+            <span class="t-count">8</span>
+          </div>
+          <div class="team-fns open">
+            <div class="fn-row sel" onclick="selectFn(this,'Wire Transfer Processing','TIER 1','Active','Payments Platform › Settlement &amp; Clearing')">
+              <div class="fn-tier t1">T1</div>
+              <span class="fn-label">Wire Transfer Processing</span>
+              <div class="fn-status active"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'SWIFT Messaging & Routing','TIER 1','Active','Payments Platform › Settlement &amp; Clearing')">
+              <div class="fn-tier t1">T1</div>
+              <span class="fn-label">SWIFT Messaging &amp; Routing</span>
+              <div class="fn-status active"></div>
+              <div class="fn-change-dot"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'FX Settlement','TIER 1','Active','Payments Platform › Settlement &amp; Clearing')">
+              <div class="fn-tier t1">T1</div>
+              <span class="fn-label">FX Settlement</span>
+              <div class="fn-status review"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'Intraday Liquidity Mgmt','TIER 2','Active','Payments Platform › Settlement &amp; Clearing')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">Intraday Liquidity Mgmt</span>
+              <div class="fn-status active"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'Payment Netting','TIER 2','Active','Payments Platform › Settlement &amp; Clearing')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">Payment Netting</span>
+              <div class="fn-status active"></div>
+            </div>
+          </div>
+
+          <div class="team-row" onclick="toggleTeam(this)">
+            <span class="caret">▶</span>
+            <span class="t-name">Payments Operations</span>
+            <span class="t-count">9</span>
+          </div>
+          <div class="team-fns">
+            <div class="fn-row" onclick="selectFn(this,'Trade Confirmation','TIER 2','Active','Payments Platform › Payments Operations')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">Trade Confirmation</span>
+              <div class="fn-status active"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'Nostro Reconciliation','TIER 2','Review','Payments Platform › Payments Operations')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">Nostro Reconciliation</span>
+              <div class="fn-status review"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'Correspondent Banking Reporting','TIER 3','Active','Payments Platform › Payments Operations')">
+              <div class="fn-tier t3">T3</div>
+              <span class="fn-label">Correspondent Banking Rpt.</span>
+              <div class="fn-status active"></div>
+            </div>
+          </div>
+
+          <div class="team-row" onclick="toggleTeam(this)">
+            <span class="caret">▶</span>
+            <span class="t-name">Regulatory Reporting</span>
+            <span class="t-count">6</span>
+          </div>
+          <div class="team-fns">
+            <div class="fn-row" onclick="selectFn(this,'SWIFT gpi Reporting','TIER 2','Active','Payments Platform › Regulatory Reporting')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">SWIFT gpi Reporting</span>
+              <div class="fn-status active"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'CASS Reporting','TIER 3','Pending','Payments Platform › Regulatory Reporting')">
+              <div class="fn-tier t3">T3</div>
+              <span class="fn-label">CASS Reporting</span>
+              <div class="fn-status pending"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tg" style="margin-top:4px">
+        <div class="tg-hdr" onclick="toggleTree(this)">
+          <span class="caret">▶</span>
+          <span class="g-icon">📊</span>
+          <span class="g-name">Trade Finance Platform</span>
+          <span class="g-count">18</span>
+        </div>
+        <div class="tg-children">
+          <div class="team-row" onclick="toggleTeam(this)">
+            <span class="caret">▶</span>
+            <span class="t-name">Trade Processing</span>
+            <span class="t-count">7</span>
+          </div>
+          <div class="team-fns">
+            <div class="fn-row" onclick="selectFn(this,'LC Issuance & Processing','TIER 1','Active','Trade Finance › Trade Processing')">
+              <div class="fn-tier t1">T1</div>
+              <span class="fn-label">LC Issuance &amp; Processing</span>
+              <div class="fn-status active"></div>
+            </div>
+            <div class="fn-row" onclick="selectFn(this,'Trade Settlement','TIER 2','Active','Trade Finance › Trade Processing')">
+              <div class="fn-tier t2">T2</div>
+              <span class="fn-label">Trade Settlement</span>
+              <div class="fn-status active"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tg" style="margin-top:4px">
+        <div class="tg-hdr" onclick="toggleTree(this)">
+          <span class="caret">▶</span>
+          <span class="g-icon">💹</span>
+          <span class="g-name">Treasury Platform</span>
+          <span class="g-count">14</span>
+        </div>
+        <div class="tg-children"></div>
+      </div>
+
+    </div></div><div class="detail-pane">
+
+    <div class="role-bar">
+      <span class="role-label">Role:</span>
+      <button class="rbtn on" id="rbtn-r" onclick="switchRole('r')">Resiliency Analyst</button>
+      <button class="rbtn adm" id="rbtn-a" onclick="switchRole('a')">Admin Reviewer</button>
+      <div class="role-bar-right" id="role-hint">AI panel on the right shows change submission agent →</div>
+    </div>
+
+    <div class="breadcrumb" id="breadcrumb">
+      <span class="bc-item">Payments Platform</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item">Settlement &amp; Clearing</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item current">Wire Transfer Processing</span>
+    </div>
+
+    <div class="fn-header">
+      <div class="fn-header-row">
+        <div class="fn-header-icon">⚡</div>
+        <div class="fn-header-main">
+          <div class="fn-header-name" id="fn-name">Wire Transfer Processing</div>
+          <div class="fn-header-path" id="fn-path">Payments Platform · Settlement &amp; Clearing · Function ID: FN-PAY-001</div>
+          <div class="fn-header-badges">
+            <span class="badge t1">TIER 1</span>
+            <span class="badge active">● Active</span>
+            <span class="badge plain">Payments Ops</span>
+            <span class="badge plain">FRB · PRA · MAS · HKMA</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-sm btn-ghost">📋 History</button>
+          <button class="btn-sm btn-ghost" id="edit-btn">✏️ Edit via AI →</button>
+        </div>
+      </div>
+      <div class="fn-kpi-row">
+        <div class="fn-kpi"><div class="fn-kpi-val r">2h</div><div class="fn-kpi-lbl">RTO</div></div>
+        <div class="fn-kpi"><div class="fn-kpi-val y">1h</div><div class="fn-kpi-lbl">RPO</div></div>
+        <div class="fn-kpi"><div class="fn-kpi-val">3</div><div class="fn-kpi-lbl">Applications</div></div>
+        <div class="fn-kpi"><div class="fn-kpi-val">4</div><div class="fn-kpi-lbl">Legal Entities</div></div>
+        <div class="fn-kpi"><div class="fn-kpi-val">2</div><div class="fn-kpi-lbl">Contracts</div></div>
+        <div class="fn-kpi"><div class="fn-kpi-val g">1</div><div class="fn-kpi-lbl">Pending Changes</div></div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab on" onclick="switchDetailTab(this,'overview')">Overview</div>
+      <div class="tab" onclick="switchDetailTab(this,'appmapping')">App Mappings <span class="tbadge">3</span></div>
+      <div class="tab" onclick="switchDetailTab(this,'le')">Legal Entities <span class="tbadge">4</span></div>
+      <div class="tab" onclick="switchDetailTab(this,'engagements')">Engagements <span class="tbadge">2</span></div>
+      <div class="tab" onclick="switchDetailTab(this,'contracts')">Contracts <span class="tbadge">2</span></div>
+      <div class="tab" onclick="switchDetailTab(this,'history')">Change History <span class="tbadge r">3</span></div>
+    </div>
+
+    <div class="tab-content">
+
+      <div class="tab-panel on" id="tp-overview">
+        <div class="prop-section">
+          <div class="prop-section-title">Core Properties <span class="pts-action">✏️ Propose edit via AI</span></div>
+          <div class="prop-grid three">
+            <div class="prop-cell">
+              <div class="pc-label">Function Name</div>
+              <div class="pc-val">Wire Transfer Processing</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Function Code</div>
+              <div class="pc-val mono">FN-PAY-001</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Status</div>
+              <div class="pc-val g">● Active</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Function Criticality</div>
+              <div class="pc-val r">TIER 1</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">RTO (hrs)</div>
+              <div class="pc-val mono r">2 hours</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">RPO (hrs)</div>
+              <div class="pc-val mono y">1 hour</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Parent Function</div>
+              <div class="pc-val">Payments Operations</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Function Owner</div>
+              <div class="pc-val">Payments Ops Team</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Last Updated</div>
+              <div class="pc-val muted">21 Feb 2026</div>
+            </div>
+          </div>
+          <div class="ai-inline">
+            <span class="ai-inline-icon">🤖</span>
+            <span>RTO was recently tightened from 4h → 2h (SUB-2026-0047, approved 21 Feb). <a>View change →</a></span>
+          </div>
+        </div>
+
+        <div class="prop-section">
+          <div class="prop-section-title">Description</div>
+          <div class="prop-grid one">
+            <div class="prop-cell">
+              <div class="pc-label">Function Description</div>
+              <div class="pc-val desc-text">Responsible for the end-to-end processing of domestic and international wire transfers, including initiation, validation, routing, and settlement confirmation via SWIFT and internal payment rails. Supports high-value and time-critical payments across all legal entity jurisdictions.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prop-section">
+          <div class="prop-section-title">Regulatory &amp; Compliance</div>
+          <div class="prop-grid">
+            <div class="prop-cell">
+              <div class="pc-label">Applicable Regulatory Views</div>
+              <div class="reg-tags" style="margin-top:4px">
+                <span class="reg-tag">FRB</span>
+                <span class="reg-tag">PRA</span>
+                <span class="reg-tag">MAS</span>
+                <span class="reg-tag">HKMA</span>
+              </div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Regulatory Classification</div>
+              <div class="pc-val">Systemically Important</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Recovery Strategy</div>
+              <div class="pc-val">Active-Active with Temenos fallback</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">MIA (Max Interruption Allowed)</div>
+              <div class="pc-val mono r">2 hours</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prop-section">
+          <div class="prop-section-title">Taxonomy Position</div>
+          <div class="prop-grid three">
+            <div class="prop-cell">
+              <div class="pc-label">Platform Group</div>
+              <div class="pc-val">Payments Platform</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Team</div>
+              <div class="pc-val">Settlement &amp; Clearing</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Taxonomy Level</div>
+              <div class="pc-val">Level 3</div>
+            </div>
+          </div>
+        </div>
+      </div><div class="tab-panel" id="tp-appmapping">
+        <div class="mapping-toolbar">
+          <input class="mt-search" placeholder="Search applications...">
+          <button class="btn-sm btn-ghost">Filter ▾</button>
+          <button class="btn-sm btn-ghost">Export</button>
+          <button class="btn-sm btn-acc" style="margin-left:auto">+ Add Mapping</button>
+        </div>
+
+        <div class="ai-inline" style="margin-bottom:10px">
+          <span class="ai-inline-icon">🤖</span>
+          <span>SWIFT Hub is the critical dependency here. 2 of 3 apps have no active fallback. <a>Ask the AI about fallback options →</a></span>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Application</th>
+                <th>App Type</th>
+                <th>Dependency Type</th>
+                <th>Mapping Status</th>
+                <th>Change Status</th>
+                <th>Last Reviewed</th>
+                <th>Comments</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="cell-name">SWIFT Hub</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono)">APP-001</div></td>
+                <td><span class="badge plain">Core</span></td>
+                <td><span style="font-size:11px">Primary · Critical</span></td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span class="change-chip cc-none">No Change</span></td>
+                <td><span class="cell-mono">14 Feb 2026</span></td>
+                <td><span style="font-size:10px;color:var(--text3)">SLA renews Apr 2026</span></td>
+                <td>
+                  <button class="tbl-action">View</button>
+                  <button class="tbl-action" style="margin-left:4px">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">Murex</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono)">APP-007</div></td>
+                <td><span class="badge plain">Supporting</span></td>
+                <td><span style="font-size:11px">Secondary · Enrichment</span></td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span class="change-chip cc-mod">◈ Modified</span></td>
+                <td><span class="cell-mono">21 Feb 2026</span></td>
+                <td><span style="font-size:10px;color:var(--text3)">Dependency type updated</span></td>
+                <td>
+                  <button class="tbl-action">View</button>
+                  <button class="tbl-action" style="margin-left:4px">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">Temenos</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono)">APP-012</div></td>
+                <td><span class="badge plain">Fallback</span></td>
+                <td><span style="font-size:11px">Fallback · Partial</span></td>
+                <td><span class="status-pill-sm sp-review">◐ Under Review</span></td>
+                <td><span class="change-chip cc-add">＋ Added</span></td>
+                <td><span class="cell-mono">21 Feb 2026</span></td>
+                <td><span style="font-size:10px;color:var(--ylw)">⚠ Covers 6 of 11 functions</span></td>
+                <td>
+                  <button class="tbl-action">View</button>
+                  <button class="tbl-action" style="margin-left:4px">Review</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="prop-section" style="margin-top:16px">
+          <div class="prop-section-title">Mapping Properties — SWIFT Hub</div>
+          <div class="prop-grid three">
+            <div class="prop-cell">
+              <div class="pc-label">RTO Override</div>
+              <div class="pc-val mono r">2h (same as function)</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Failover Sequence</div>
+              <div class="pc-val mono">1 (Primary)</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Data Flow Direction</div>
+              <div class="pc-val">Bidirectional</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Integration Type</div>
+              <div class="pc-val">API · MQ · File</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Environment</div>
+              <div class="pc-val">Production · DR</div>
+            </div>
+            <div class="prop-cell">
+              <div class="pc-label">Review Cycle</div>
+              <div class="pc-val">Quarterly</div>
+            </div>
+          </div>
+        </div>
+      </div><div class="tab-panel" id="tp-le">
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Legal Entity</th>
+                <th>LE Code</th>
+                <th>Jurisdiction</th>
+                <th>Regulatory Body</th>
+                <th>LE Type</th>
+                <th>Association Status</th>
+                <th>Notification Obligation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="cell-name">JPMorgan Chase NA</div></td>
+                <td><span class="cell-mono">JPM-NA</span></td>
+                <td><span>🇺🇸 United States</span></td>
+                <td><span class="reg-tag">FRB</span></td>
+                <td>Parent Entity</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span style="font-size:11px;color:var(--red)">4h post-breach</span></td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">JPMorgan Chase UK</div></td>
+                <td><span class="cell-mono">JPM-UK</span></td>
+                <td><span>🇬🇧 United Kingdom</span></td>
+                <td><span class="reg-tag">PRA</span></td>
+                <td>Subsidiary</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span style="font-size:11px;color:var(--red)">4h post-breach</span></td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">JPMorgan Singapore</div></td>
+                <td><span class="cell-mono">JPM-SG</span></td>
+                <td><span>🇸🇬 Singapore</span></td>
+                <td><span class="reg-tag">MAS</span></td>
+                <td>Branch</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span style="font-size:11px;color:var(--ylw)">1 business day</span></td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">JPMorgan Hong Kong</div></td>
+                <td><span class="cell-mono">JPM-HK</span></td>
+                <td><span>🇭🇰 Hong Kong</span></td>
+                <td><span class="reg-tag">HKMA</span></td>
+                <td>Branch</td>
+                <td><span class="status-pill-sm sp-review">◐ Under Review</span></td>
+                <td><span style="font-size:11px;color:var(--ylw)">Same business day</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tp-engagements">
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Engagement</th><th>Vendor</th><th>Type</th><th>Status</th><th>Contract Ref</th><th>Expiry</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="cell-name">SWIFT Network Services</div></td>
+                <td>SWIFT SCRL</td>
+                <td>Network Connectivity</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span class="cell-mono">CTR-2024-041</span></td>
+                <td><span style="color:var(--ylw)">Apr 2026</span></td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">Temenos Support &amp; DR</div></td>
+                <td>Temenos AG</td>
+                <td>Managed Service</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span class="cell-mono">CTR-2025-089</span></td>
+                <td><span>Dec 2027</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tp-contracts">
+        <div class="ai-inline" style="margin-bottom:10px">
+          <span class="ai-inline-icon">⚠️</span>
+          <span>SWIFT Network Services contract renews in <strong>47 days</strong>. <a>Ask AI to draft renewal briefing →</a></span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Contract</th><th>Ref</th><th>Counterparty</th><th>Type</th><th>Status</th><th>Start</th><th>Expiry</th><th>SLA</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="cell-name">SWIFT Network SLA</div></td>
+                <td><span class="cell-mono">CTR-2024-041</span></td>
+                <td>SWIFT SCRL</td>
+                <td>Network SLA</td>
+                <td><span class="status-pill-sm sp-review">⚠ Renewing</span></td>
+                <td><span class="cell-mono">Apr 2024</span></td>
+                <td><span class="cell-mono" style="color:var(--ylw)">Apr 2026</span></td>
+                <td>4h response · 99.95% uptime</td>
+              </tr>
+              <tr>
+                <td><div class="cell-name">Temenos DR Service</div></td>
+                <td><span class="cell-mono">CTR-2025-089</span></td>
+                <td>Temenos AG</td>
+                <td>Managed DR</td>
+                <td><span class="status-pill-sm sp-active">● Active</span></td>
+                <td><span class="cell-mono">Jan 2025</span></td>
+                <td><span class="cell-mono">Dec 2027</span></td>
+                <td>2h activation · RTO 4h</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tp-history">
+        <div class="history-item">
+          <div class="hi-dot approved">✅</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">SUB-2026-0047 — Approved</div>
+            <div class="hi-meta">Submitted by S. Chen · 21 Feb 2026 · Approved by D. Kumar</div>
+            <div class="hi-changes">
+              <div class="hi-change-row"><span class="hcr-field">RTO</span><span class="hcr-old">4 hours</span><span class="hcr-arr">→</span><span class="hcr-new">2 hours</span></div>
+              <div class="hi-change-row"><span class="hcr-field">Reg. Views</span><span class="hcr-old">FRB · PRA · MAS</span><span class="hcr-arr">→</span><span class="hcr-new">FRB · PRA · MAS · HKMA</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="history-item">
+          <div class="hi-dot pending">⏳</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">SUB-2026-0031 — Pending Admin Review</div>
+            <div class="hi-meta">Submitted by S. Chen · 18 Feb 2026 · Awaiting review</div>
+            <div class="hi-changes">
+              <div class="hi-change-row"><span class="hcr-field">Description</span><span class="hcr-old">Old description text...</span><span class="hcr-arr">→</span><span class="hcr-new">Updated description with ISO 20022 reference</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="history-item">
+          <div class="hi-dot approved">✅</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">SUB-2025-0198 — Approved</div>
+            <div class="hi-meta">Submitted by T. Patel · 15 Dec 2025 · Approved by M. Singh</div>
+            <div class="hi-changes">
+              <div class="hi-change-row"><span class="hcr-field">Criticality</span><span class="hcr-old">TIER 2</span><span class="hcr-arr">→</span><span class="hcr-new">TIER 1</span></div>
+              <div class="hi-change-row"><span class="hcr-field">Parent</span><span class="hcr-old">Operations Support</span><span class="hcr-arr">→</span><span class="hcr-new">Payments Operations</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div></div><div class="ai-pane" id="ai-pane">
+    <div class="ai-toggle" onclick="toggleAI()" title="Toggle AI Panel">
+      <span class="toggle-arrow">❯</span>
+    </div>
+    <div class="ai-inner">
+
+      <div class="ai-pane-hdr">
+        <div class="ai-orb">🤖</div>
+        <div>
+          <div class="ai-pane-title">Taxonomy AI Agent</div>
+          <div class="ai-pane-sub" id="ai-pane-sub">Resiliency analyst mode</div>
+        </div>
+        <div class="ai-ready"><div class="ai-ready-dot"></div>Ready</div>
+      </div>
+
+      <div class="ai-ctx-card">
+        <div class="ai-ctx-label">📌 Current Context</div>
+        <div class="ai-ctx-fn" id="ctx-fn-name">Wire Transfer Processing</div>
+        <div class="ai-ctx-props">
+          <span class="ai-ctx-prop"><strong>T1</strong> TIER 1</span>
+          <span class="ai-ctx-prop">RTO <strong>2h</strong></span>
+          <span class="ai-ctx-prop"><strong>Active</strong></span>
+          <span class="ai-ctx-prop">3 Apps</span>
+          <span class="ai-ctx-prop">4 LEs</span>
+        </div>
+      </div>
+
+      <div class="ai-convo" id="ai-convo">
+
+        <div id="convo-r">
+          <div class="am ai">
+            <div class="am-av ai">🤖</div>
+            <div class="am-bub">
+              I can see you're viewing <strong>Wire Transfer Processing</strong> — TIER1, RTO 2h, 3 apps mapped.<br><br>
+              Want to propose a change to this function, or ask me anything about its dependencies and coverage?
+              <div class="ai-btns">
+                <div class="aibtn" onclick="loadDemo('rto')">Change RTO</div>
+                <div class="aibtn" onclick="loadDemo('reg')">Add reg view</div>
+                <div class="aibtn" onclick="loadDemo('desc')">Edit description</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="am usr" id="demo-msg-usr" style="display:none">
+            <div class="am-av usr">SC</div>
+            <div class="am-bub" id="demo-usr-text"></div>
+          </div>
+
+          <div class="am ai" id="demo-msg-ai" style="display:none">
+            <div class="am-av ai">🤖</div>
+            <div class="am-bub" id="demo-ai-text"></div>
+          </div>
+        </div>
+
+        <div id="convo-a" style="display:none">
+          <div class="am ai">
+            <div class="am-av ai">🤖</div>
+            <div class="am-bub">
+              Admin view — <strong>Wire Transfer Processing</strong> has <strong>1 pending change</strong> (SUB-2026-0031) and 1 recently approved change today.<br><br>
+              What would you like to review?
+              <div class="ai-btns">
+                <div class="aibtn" onclick="loadAdminDemo('pending')">Review pending</div>
+                <div class="aibtn" onclick="loadAdminDemo('summary')">Full summary</div>
+                <div class="aibtn" onclick="loadAdminDemo('history')">Change history</div>
+              </div>
+            </div>
+          </div>
+          <div class="am adm" id="adm-msg-usr" style="display:none">
+            <div class="am-av adm">DK</div>
+            <div class="am-bub" id="adm-usr-text"></div>
+          </div>
+          <div class="am ai" id="adm-msg-ai" style="display:none">
+            <div class="am-av ai">🤖</div>
+            <div class="am-bub" id="adm-ai-text"></div>
+          </div>
+        </div>
+
+      </div><div class="ai-input-area">
+        <div class="ai-qp" id="ai-qp">
+          <div class="qpill" onclick="typeAI('What apps support this function?')">Apps & fallbacks</div>
+          <div class="qpill" onclick="typeAI('What LEs are associated with this function?')">Legal entities</div>
+          <div class="qpill" onclick="typeAI('Show me all pending changes for this function')">Pending changes</div>
+        </div>
+        <div class="ai-inp-row">
+          <input class="ai-inp" id="ai-inp" placeholder="Ask about this function or propose a change...">
+          <button class="ai-send">➤</button>
+        </div>
+      </div>
+
+    </div></div></div><script>
+/* ─── Tree toggles ─── */
+function toggleTree(hdr){
+  const c=hdr.querySelector('.caret');
+  const ch=hdr.nextElementSibling;
+  c.classList.toggle('open');
+  ch.classList.toggle('open');
+}
+function toggleTeam(row){
+  const c=row.querySelector('.caret');
+  const fns=row.nextElementSibling;
+  c.classList.toggle('open');
+  fns.classList.toggle('open');
+}
+
+/* ─── Function selection ─── */
+function selectFn(el,name,tier,status,path){
+  document.querySelectorAll('.fn-row').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+  // Update header
+  document.getElementById('fn-name').textContent=name;
+  document.getElementById('fn-path').textContent=path+' · Function ID: FN-PAY-00X';
+  // Update breadcrumb
+  const parts=path.split(' › ');
+  let bc='';
+  parts.forEach((p,i)=>{
+    bc+=`<span class="bc-item${i===parts.length-1?' current':''}">${p}</span>`;
+    if(i<parts.length-1) bc+=`<span class="bc-sep">›</span>`;
+  });
+  bc+=`<span class="bc-sep">›</span><span class="bc-item current">${name}</span>`;
+  document.getElementById('breadcrumb').innerHTML=bc;
+  // Update AI context
+  document.getElementById('ctx-fn-name').textContent=name;
+  // Reset demos
+  document.getElementById('demo-msg-usr').style.display='none';
+  document.getElementById('demo-msg-ai').style.display='none';
+  document.getElementById('adm-msg-usr').style.display='none';
+  document.getElementById('adm-msg-ai').style.display='none';
+}
+
+/* ─── Detail tab switching ─── */
+function switchDetailTab(tab,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  tab.classList.add('on');
+  document.getElementById('tp-'+id).classList.add('on');
+}
+
+/* ─── Top nav ─── */
+function setTab(el,id){
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ─── AI panel toggle ─── */
+function toggleAI(){
+  const p=document.getElementById('ai-pane');
+  p.classList.toggle('collapsed');
+  const arr=p.querySelector('.toggle-arrow');
+  if(arr) arr.textContent=p.classList.contains('collapsed')?'❮':'❯';
+}
+
+/* ─── Role switching ─── */
+function switchRole(r){
+  const btnR=document.getElementById('rbtn-r');
+  const btnA=document.getElementById('rbtn-a');
+  const hint=document.getElementById('role-hint');
+  const sub=document.getElementById('ai-pane-sub');
+  const rtag=document.getElementById('rtag');
+  const uav=document.getElementById('uav');
+  const convoR=document.getElementById('convo-r');
+  const convoA=document.getElementById('convo-a');
+  const qp=document.getElementById('ai-qp');
+  const inp=document.getElementById('ai-inp');
+
+  if(r==='a'){
+    btnR.classList.remove('on'); btnA.classList.add('on');
+    hint.textContent='← AI agent shows pending changes for admin review';
+    sub.textContent='Admin reviewer mode';
+    rtag.textContent='ADMIN REVIEWER';
+    rtag.style.color='var(--pur)'; rtag.style.borderColor='var(--pur)';
+    uav.textContent='DK';
+    uav.style.background='linear-gradient(135deg,rgba(124,58,237,.7),rgba(100,60,200,.7))';
+    convoR.style.display='none'; convoA.style.display='block';
+    qp.innerHTML=`
+      <div class="qpill" onclick="typeAI('Review pending changes for this function')">Review pending</div>
+      <div class="qpill" onclick="typeAI('Summarise all changes this month')">Monthly summary</div>
+      <div class="qpill" onclick="typeAI('Show risk flags across submissions')">Risk flags</div>`;
+    inp.placeholder='Review submissions or query change history...';
+  } else {
+    btnA.classList.remove('on'); btnR.classList.add('on');
+    hint.textContent='AI panel on the right shows change submission agent →';
+    sub.textContent='Resiliency analyst mode';
+    rtag.textContent='RESILIENCY ANALYST';
+    rtag.style.color='var(--text3)'; rtag.style.borderColor='var(--bord2)';
+    uav.textContent='SC';
+    uav.style.background='linear-gradient(135deg,var(--acc2),var(--pur))';
+    convoA.style.display='none'; convoR.style.display='block';
+    qp.innerHTML=`
+      <div class="qpill" onclick="typeAI('What apps support this function?')">Apps & fallbacks</div>
+      <div class="qpill" onclick="typeAI('What LEs are associated with this function?')">Legal entities</div>
+      <div class="qpill" onclick="typeAI('Show me all pending changes for this function')">Pending changes</div>`;
+    inp.placeholder='Ask about this function or propose a change...';
+  }
+}
+
+/* ─── Demo flows ─── */
+function loadDemo(type){
+  const usrEl=document.getElementById('demo-msg-usr');
+  const aiEl=document.getElementById('demo-msg-ai');
+  const usrText=document.getElementById('demo-usr-text');
+  const aiText=document.getElementById('demo-ai-text');
+  usrEl.style.display='flex'; aiEl.style.display='flex';
+
+  if(type==='rto'){
+    usrText.textContent='I want to update the RTO from 2 hours to 1 hour for this function.';
+    aiText.innerHTML=`I've pulled the current state. Here's what this change looks like:
+      <div class="mini-diff">
+        <div class="md-hdr">Wire Transfer Processing — 1 change</div>
+        <div class="md-row"><span class="md-field">RTO</span><span class="md-old">2 hours</span><span class="md-arr">→</span><span class="md-new">1 hour ⬆ Tightened</span></div>
+        <div class="md-row"><span class="md-field">Criticality</span><span class="md-nc">TIER1 — no change</span></div>
+      </div>
+      <div class="mini-val">
+        <div class="mv-row"><span class="mv-ico">✅</span><span class="mv-text">RTO tightening — valid</span><span class="mv-stat mv-ok">PASS</span></div>
+        <div class="mv-row"><span class="mv-ico">⚠️</span><span class="mv-text">50% tightening — confirm ops can support 1h</span><span class="mv-stat mv-warn">NOTE</span></div>
+      </div>
+      <div class="ai-btns">
+        <div class="aibtn">Confirm & submit</div>
+        <div class="aibtn rej">Cancel</div>
+      </div>`;
+  } else if(type==='reg'){
+    usrText.textContent='Add CBUAE to the regulatory views for this function.';
+    aiText.innerHTML=`Got it. Current regulatory views: FRB · PRA · MAS · HKMA.
+      <div class="mini-diff">
+        <div class="md-hdr">Wire Transfer Processing — 1 change</div>
+        <div class="md-row"><span class="md-field">Reg. Views</span><span class="md-old">FRB · PRA · MAS · HKMA</span><span class="md-arr">→</span><span class="md-new">FRB · PRA · MAS · HKMA · CBUAE</span></div>
+      </div>
+      <div class="mini-val">
+        <div class="mv-row"><span class="mv-ico">✅</span><span class="mv-text">Adding CBUAE — valid, no block</span><span class="mv-stat mv-ok">PASS</span></div>
+      </div>
+      <div class="ai-btns">
+        <div class="aibtn">Confirm & submit</div>
+        <div class="aibtn rej">Cancel</div>
+      </div>`;
+  } else if(type==='desc'){
+    usrText.textContent='Update the description to mention that this now also supports cross-border CBDC payments.';
+    aiText.innerHTML=`Description update noted. Here's the proposed change:
+      <div class="mini-diff">
+        <div class="md-hdr">Wire Transfer Processing — 1 change</div>
+        <div class="md-row"><span class="md-field">Description</span><span class="md-old">...via SWIFT and internal payment rails.</span><span class="md-arr">→</span><span class="md-new">...via SWIFT, internal payment rails, and cross-border CBDC settlement networks.</span></div>
+      </div>
+      <div class="mini-val">
+        <div class="mv-row"><span class="mv-ico">✅</span><span class="mv-text">Description update — no structural violations</span><span class="mv-stat mv-ok">PASS</span></div>
+      </div>
+      <div class="ai-btns">
+        <div class="aibtn">Confirm & submit</div>
+        <div class="aibtn rej">Cancel</div>
+      </div>`;
+  }
+  // Scroll to bottom
+  const convo=document.getElementById('ai-convo');
+  setTimeout(()=>convo.scrollTop=convo.scrollHeight,50);
+}
+
+function loadAdminDemo(type){
+  const usrEl=document.getElementById('adm-msg-usr');
+  const aiEl=document.getElementById('adm-msg-ai');
+  const usrText=document.getElementById('adm-usr-text');
+  const aiText=document.getElementById('adm-ai-text');
+  usrEl.style.display='flex'; aiEl.style.display='flex';
+
+  if(type==='pending'){
+    usrText.textContent='Review the pending change for this function.';
+    aiText.innerHTML=`<strong>SUB-2026-0031</strong> — Description update:
+      <div class="mini-diff">
+        <div class="md-hdr">1 change · Submitted 18 Feb by S. Chen</div>
+        <div class="md-row"><span class="md-field">Description</span><span class="md-old">Old text...</span><span class="md-arr">→</span><span class="md-new">...with ISO 20022 protocol reference added</span></div>
+      </div>
+      <div class="ai-btns">
+        <div class="aibtn apr">✓ Approve</div>
+        <div class="aibtn rej">✗ Reject</div>
+        <div class="aibtn flg">⚑ Request info</div>
+      </div>`;
+  } else if(type==='summary'){
+    usrText.textContent='Give me a full summary of changes to this function this month.';
+    aiText.innerHTML=`February 2026 — Wire Transfer Processing:
+      <div class="mini-summary">
+        <div class="ms-hdr"><span>Change Type</span><span>Count</span></div>
+        <div class="ms-row"><span class="ms-type">RTO Changes</span><span class="ms-count r">1</span></div>
+        <div class="ms-row"><span class="ms-type">Regulatory Views</span><span class="ms-count g">1 added</span></div>
+        <div class="ms-row"><span class="ms-type">Description Updates</span><span class="ms-count p">1 pending</span></div>
+        <div class="ms-row"><span class="ms-type">App Mappings</span><span class="ms-count y">1 modified</span></div>
+      </div>
+      <div class="ai-btns">
+        <div class="aibtn">Export report</div>
+        <div class="aibtn">View all submissions</div>
+      </div>`;
+  } else if(type==='history'){
+    usrText.textContent='Show me who approved the RTO change.';
+    aiText.innerHTML=`RTO change (4h → 2h) on <strong>Wire Transfer Processing</strong>:
+      <div class="mini-diff">
+        <div class="md-hdr">SUB-2026-0047 · Approved 21 Feb 2026</div>
+        <div class="md-row"><span class="md-field">RTO</span><span class="md-old">4 hours</span><span class="md-arr">→</span><span class="md-new">2 hours</span></div>
+        <div class="md-row"><span class="md-field">Submitted</span><span class="md-nc">S. Chen · 21 Feb 09:51 UTC</span></div>
+        <div class="md-row"><span class="md-field">Approved by</span><span class="md-new">D. Kumar · 21 Feb 11:22 UTC</span></div>
+      </div>`;
+  }
+  const convo=document.getElementById('ai-convo');
+  setTimeout(()=>convo.scrollTop=convo.scrollHeight,50);
+}
+
+function typeAI(text){
+  document.getElementById('ai-inp').value=text;
+  document.getElementById('ai-inp').focus();
+}
+
+// Live clock
+setInterval(()=>{
+  const n=new Date();
+  const t=String(n.getUTCHours()).padStart(2,'0')+':'+String(n.getUTCMinutes()).padStart(2,'0')+' UTC';
+  const el=document.getElementById('clk');
+  if(el) el.textContent=t;
+},15000);
+</script>
+</body>
+</html>
